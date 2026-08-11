@@ -75,4 +75,6 @@ export interface QuizDoc {
   updatedAt: Date;
 }
 
-export const Quiz = (models.Quiz ?? model("Quiz", quizSchema)) as any;
+const QuizModel = models.Quiz ?? model("Quiz", quizSchema);
+
+export const Quiz = QuizModel as typeof QuizModel;

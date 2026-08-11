@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, randomBytes, timingSafeEqual } from "crypto";
+import { createDecipheriv, randomBytes, timingSafeEqual } from "crypto";
 
 const ALGO = "aes-256-gcm";
 

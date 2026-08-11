@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Quiz } from "@/lib/models/quiz";
 import { dbConnect, isValidObjectId } from "@/lib/db";
 import { requireTeacher } from "@/lib/auth";
-import { persistedQuestionSchema, quizConfigSchema, difficultySchema } from "@/lib/schemas";
+import { persistedQuestionSchema, quizConfigSchema } from "@/lib/schemas";
 
 export const runtime = "nodejs";
 

@@ -38,4 +38,6 @@ export interface AttemptDoc {
   createdAt: Date;
 }
 
-export const Attempt = (models.Attempt ?? model("Attempt", attemptSchema)) as any;
+const AttemptModel = models.Attempt ?? model("Attempt", attemptSchema);
+
+export const Attempt = AttemptModel as typeof AttemptModel;

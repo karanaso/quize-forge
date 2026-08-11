@@ -43,7 +43,7 @@ export async function GET() {
     .lean();
 
   return NextResponse.json({
-    quizzes: docs.map((d: any) => ({
+    quizzes: docs.map((d) => ({
       id: d._id.toString(),
       title: d.title,
       status: d.status,

@@ -159,6 +159,7 @@ export async function extractDigest(
   pages: PageContent[],
   progress: ProgressFn,
 ): Promise<ContentDigest> {
+  progress("Extracting key concepts and figures…");
   const res = await client.chat.completions.create({
     model: "gpt-4o-mini",
     max_tokens: 3000,
@@ -194,7 +195,6 @@ export async function draftQuestions(
     questionCount: number;
     difficulty: Difficulty;
     mix: "balanced" | "mc-tf-heavy";
-    progress: ProgressFn;
   },
 ): Promise<DraftQuestion[]> {
   const mixInstruction =

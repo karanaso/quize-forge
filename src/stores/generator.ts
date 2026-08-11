@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { Difficulty, Question, Quiz, QuizConfig } from "@/lib/schemas";
+import type { Difficulty, Question, QuizConfig } from "@/lib/schemas";
 
 export interface UploadedPdf {
   pdfId: string;

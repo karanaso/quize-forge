@@ -91,7 +91,6 @@ export async function POST(request: Request) {
           questionCount,
           difficulty,
           mix: "mc-tf-heavy",
-          progress,
         });
 
         const figureByPageLabel = new Map<string, { raster: Buffer }>();

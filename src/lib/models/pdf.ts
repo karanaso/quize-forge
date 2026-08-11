@@ -25,4 +25,6 @@ export interface PdfDoc {
   createdAt: Date;
 }
 
-export const Pdf = (models.Pdf ?? model("Pdf", pdfSchema)) as any;
+const PdfModel = models.Pdf ?? model("Pdf", pdfSchema);
+
+export const Pdf = PdfModel as typeof PdfModel;
