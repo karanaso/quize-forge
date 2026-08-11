@@ -14,15 +14,12 @@ async function loadPdfjs() {
 
 const DEFAULT_SCALE = 2; // ~144 DPI
 
-const canvasFactory: { create: (w: number, h: number) => { canvas: unknown; context: unknown } } = {
-  create: (width: number, height: number) => {
+class NapiCanvasFactory {
+  create(width: number, height: number) {
     const canvas = createCanvas(width, height);
-    return {
-      canvas,
-      context: canvas.getContext("2d"),
-    };
-  },
-};
+    return { canvas, context: canvas.getContext("2d") };
+  }
+}
 
 async function openDocument(data: Uint8Array) {
   const pdfjs = await loadPdfjs();
@@ -30,7 +27,7 @@ async function openDocument(data: Uint8Array) {
     data,
     useWorkerFetch: false,
     useSystemFonts: true,
-    CanvasFactory: canvasFactory,
+    CanvasFactory: NapiCanvasFactory,
   });
   const doc = await task.promise;
   return { doc, task };

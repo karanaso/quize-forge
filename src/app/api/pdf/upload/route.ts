@@ -36,7 +36,8 @@ export async function POST(request: Request) {
   let pageCount: number;
   try {
     pageCount = await getPdfPageCount(new Uint8Array(bytes));
-  } catch {
+  } catch (err) {
+    console.error("PDF parse failed:", err);
     return NextResponse.json({ error: "Could not read PDF" }, { status: 422 });
   }
   if (pageCount > MAX_UPLOAD_PAGES) {
