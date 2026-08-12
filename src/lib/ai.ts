@@ -63,6 +63,123 @@ const DIGEST_SCHEMA = {
   },
 };
 
+const IMAGE_REF_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["page", "label"],
+  properties: {
+    page: { type: "integer", minimum: 1 },
+    label: {
+      type: "string",
+      description: "Must match a figure label from the digest exactly.",
+    },
+  },
+};
+
+// OpenAI strict mode requires `required` to list every key in `properties`,
+// so each question kind gets its own self-contained schema and the items use
+// `anyOf` to discriminate on `kind`.
+const MC_ITEM_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["kind", "text", "options", "correctIndex", "explanation", "imageRef"],
+  properties: {
+    kind: { type: "string", const: "mc" },
+    text: { type: "string" },
+    options: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 4,
+      maxItems: 4,
+      description: "Exactly 4 options for a multiple-choice question.",
+    },
+    correctIndex: {
+      type: "integer",
+      minimum: 0,
+      maximum: 3,
+      description: "Index of the correct option (0-3).",
+    },
+    explanation: { type: "string", description: "Short explanation of the correct answer." },
+    imageRef: {
+      ...IMAGE_REF_SCHEMA,
+      type: ["object", "null"],
+      description: "Optional. Reference a figure from the digest when the question depends on it.",
+    },
+  },
+};
+
+const TF_ITEM_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["kind", "text", "correct", "explanation", "imageRef"],
+  properties: {
+    kind: { type: "string", const: "tf" },
+    text: { type: "string" },
+    correct: { type: "boolean", description: "The correct true/false value." },
+    explanation: { type: "string", description: "Short explanation of the correct answer." },
+    imageRef: {
+      ...IMAGE_REF_SCHEMA,
+      type: ["object", "null"],
+      description: "Optional. Reference a figure from the digest when the question depends on it.",
+    },
+  },
+};
+
+const FILL_ITEM_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["kind", "text", "blank", "acceptableAnswers", "explanation", "imageRef"],
+  properties: {
+    kind: { type: "string", const: "fill" },
+    text: { type: "string", description: 'The sentence with "____" where the blank is.' },
+    blank: { type: "string", description: "The exact missing word/phrase." },
+    acceptableAnswers: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 1,
+      maxItems: 5,
+      description: "The blank answer plus obvious alternative phrasings.",
+    },
+    explanation: { type: "string", description: "Short explanation of the correct answer." },
+    imageRef: {
+      ...IMAGE_REF_SCHEMA,
+      type: ["object", "null"],
+      description: "Optional. Reference a figure from the digest when the question depends on it.",
+    },
+  },
+};
+
+const MATCHING_ITEM_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["kind", "text", "pairs", "explanation", "imageRef"],
+  properties: {
+    kind: { type: "string", const: "matching" },
+    text: { type: "string", description: "Optional instruction text for the matching question." },
+    pairs: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["left", "right"],
+        properties: {
+          left: { type: "string", description: "Term to be matched." },
+          right: { type: "string", description: "The matching definition." },
+        },
+      },
+      minItems: 2,
+      maxItems: 8,
+      description: "Term->definition pairs. Use left=term, right=definition.",
+    },
+    explanation: { type: "string", description: "Short explanation of the correct answer." },
+    imageRef: {
+      ...IMAGE_REF_SCHEMA,
+      type: ["object", "null"],
+      description: "Optional. Reference a figure from the digest when the question depends on it.",
+    },
+  },
+};
+
 const QUESTIONS_SCHEMA = {
   type: "object",
   additionalProperties: false,
@@ -71,67 +188,7 @@ const QUESTIONS_SCHEMA = {
     questions: {
       type: "array",
       items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["kind", "text"],
-        properties: {
-          kind: { type: "string", enum: ["mc", "tf", "fill", "matching"] },
-          text: { type: "string" },
-          options: {
-            type: "array",
-            items: { type: "string" },
-            minItems: 4,
-            maxItems: 4,
-            description: "Required for mc: exactly 4 options.",
-          },
-          correctIndex: {
-            type: "integer",
-            minimum: 0,
-            maximum: 3,
-            description: "Required for mc: index of the correct option.",
-          },
-          correct: {
-            type: "boolean",
-            description: "Required for tf: the correct true/false value.",
-          },
-          blank: {
-            type: "string",
-            description: "Required for fill: the exact missing word/phrase.",
-          },
-          acceptableAnswers: {
-            type: "array",
-            items: { type: "string" },
-            minItems: 1,
-            maxItems: 5,
-            description: "Required for fill: the blank answer plus obvious alternative phrasings.",
-          },
-          pairs: {
-            type: "array",
-            items: {
-              type: "object",
-              additionalProperties: false,
-              required: ["left", "right"],
-              properties: {
-                left: { type: "string" },
-                right: { type: "string" },
-              },
-            },
-            minItems: 2,
-            maxItems: 8,
-            description: "Required for matching: term->definition pairs. Use left=term, right=definition.",
-          },
-          explanation: { type: "string", description: "Short explanation of the correct answer." },
-          imageRef: {
-            type: "object",
-            additionalProperties: false,
-            required: ["page", "label"],
-            properties: {
-              page: { type: "integer", minimum: 1 },
-              label: { type: "string", description: "Must match a figure label from the digest exactly." },
-            },
-            description: "Optional. Reference a figure from the digest when the question depends on it.",
-          },
-        },
+        anyOf: [MC_ITEM_SCHEMA, TF_ITEM_SCHEMA, FILL_ITEM_SCHEMA, MATCHING_ITEM_SCHEMA],
       },
     },
   },
@@ -169,8 +226,11 @@ export async function extractDigest(
         role: "system",
         content:
           "You are reading pages of an educational book (text plus figures/diagrams). " +
-          "Extract the book's language, topic, key concepts, and a catalog of the figures on each page " +
-          "with their normalized bounding boxes (x/y/width/height in 0-1 coordinates relative to the page).",
+          "Extract ONLY what is actually printed on these pages — do not add any outside knowledge. " +
+          "List every important fact, definition, formula, example, term and number exactly as it appears in the book, " +
+          "each as a key concept that includes its exact page number, e.g. \"C = 2\u03c0r is the circumference formula (p. 4)\". " +
+          "Also produce a catalog of the figures on each page with their normalized bounding boxes " +
+          "(x/y/width/height in 0-1 coordinates relative to the page).",
       },
       {
         role: "user",
@@ -210,14 +270,19 @@ export async function draftQuestions(
       {
         role: "system",
         content: [
-          "You are a teacher writing a quiz. Write the questions in this language: ",
+          "You are a teacher writing a quiz that tests ONLY the material in the provided book pages. ",
+          "Write the questions in this language: ",
           digest.language,
           ".",
           "Question difficulty:", opts.difficulty,
           ". ",
           mixInstruction,
           "",
-          "Only ask about material that is actually covered by the pages.",
+          "Every question must be directly and exclusively answerable from the supplied pages. ",
+          "Never invent facts, formulas, dates, examples or numbers that are not in the book. ",
+          "Use the book's own terminology, definitions, formulas and examples. ",
+          "In each explanation, name the specific concept from the book and include its page number, ",
+          'e.g. "From p. 4: the circumference formula C = 2\u03c0r.". ',
           "When a question depends on a figure/diagram, set imageRef to match a figure label from the digest exactly.",
         ].join(" "),
       },
@@ -225,11 +290,12 @@ export async function draftQuestions(
         role: "user",
         content:
           `Book topic: ${digest.topic}\nSummary: ${digest.summary}\n` +
-          `Key concepts:\n- ${digest.keyConcepts.join("\n- ")}\n` +
+          `Key concepts (facts from the book, with page numbers):\n- ${digest.keyConcepts.join("\n- ")}\n` +
           `Figures:\n${digest.figures
             .map((f) => `- page ${f.page}: "${f.label}" bbox=${JSON.stringify(f.bbox)}`)
             .join("\n")}\n` +
-          `\nGenerate exactly ${opts.questionCount} questions. Fill-in-the-blank: put "____" in the text where the blank is.`,
+          `\nGenerate exactly ${opts.questionCount} questions, each grounded in a concrete fact, formula, definition or example from the pages above. ` +
+          `Fill-in-the-blank: put "____" in the text where the blank is.`,
       },
     ],
   });
@@ -240,7 +306,7 @@ export async function draftQuestions(
   const parsed = JSON.parse(raw) as { questions: DraftQuestion[] };
   const validated = parsed.questions.map((q) => ({
     ...questionSchema.parse(q),
-    imageRef: q.imageRef,
+    imageRef: q.imageRef ?? undefined,
   }));
   return validated.slice(0, opts.questionCount);
 }
