@@ -9,6 +9,90 @@ export const runtime = "nodejs";
 
 type Ctx = { params: Promise<{ id: string }> };
 
+interface StoredAnswer {
+  questionId: string;
+  kind: string;
+  selectedIndex?: number;
+  value?: boolean;
+  text?: string;
+  pairings?: { left: string; right: string }[];
+  correct?: boolean;
+}
+
+interface QuizQuestion {
+  id: string;
+  kind: string;
+  text?: string;
+  points?: number;
+  options?: string[];
+  correctIndex?: number;
+  correct?: boolean;
+  acceptableAnswers?: string[];
+  pairs?: { left: string; right: string }[];
+}
+
+function correctAnswerText(q: QuizQuestion | undefined): string {
+  if (!q) return "—";
+  switch (q.kind) {
+    case "mc":
+      return q.options?.[q.correctIndex ?? -1] ?? "—";
+    case "tf":
+      return q.correct ? "True" : "False";
+    case "fill":
+      return q.acceptableAnswers?.join(" / ") ?? "—";
+    case "matching":
+      return q.pairs?.map((p) => `${p.left} → ${p.right}`).join("; ") ?? "—";
+    default:
+      return "—";
+  }
+}
+
+function studentAnswerText(ans: StoredAnswer, q: QuizQuestion | undefined): string {
+  switch (ans.kind) {
+    case "mc":
+      return typeof ans.selectedIndex === "number"
+        ? q?.options?.[ans.selectedIndex] ?? `Option ${ans.selectedIndex + 1}`
+        : "No answer";
+    case "tf":
+      return ans.value === true ? "True" : ans.value === false ? "False" : "No answer";
+    case "fill":
+      return ans.text?.trim() ? ans.text : "No answer";
+    case "matching":
+      return ans.pairings?.length
+        ? ans.pairings.map((p) => `${p.left} → ${p.right}`).join("; ")
+        : "No answer";
+    default:
+      return "No answer";
+  }
+}
+
+function buildResponses(
+  questions: QuizQuestion[],
+  answers: StoredAnswer[],
+): Array<{
+  questionId: string;
+  text: string;
+  kind: string;
+  points: number;
+  correct: boolean;
+  studentAnswer: string;
+  correctAnswer: string;
+}> {
+  const qById = new Map(questions.map((q) => [q.id, q]));
+  return answers.map((ans) => {
+    const q = qById.get(ans.questionId);
+    return {
+      questionId: ans.questionId,
+      text: q?.text ?? "Unknown question",
+      kind: q?.kind ?? ans.kind,
+      points: q?.points ?? 1,
+      correct: ans.correct ?? false,
+      studentAnswer: studentAnswerText(ans, q),
+      correctAnswer: correctAnswerText(q),
+    };
+  });
+}
+
 export async function GET(_req: Request, ctx: Ctx) {
   await requireTeacher();
   const { id } = await ctx.params;
@@ -45,6 +129,10 @@ export async function GET(_req: Request, ctx: Ctx) {
         x.className === a.className &&
         x.studentName === a.studentName,
     ).length,
+    responses: buildResponses(
+      quiz.questions as unknown as QuizQuestion[],
+      a.answers as unknown as StoredAnswer[],
+    ),
   }));
 
   const allStats = computeQuestionStats(attempts);
