@@ -19,6 +19,17 @@ export default defineConfig({
       {
         resolve: { alias },
         test: {
+          name: "dom",
+          environment: "jsdom",
+          include: ["tests/dom/**/*.test.tsx"],
+          globals: true,
+          restoreMocks: true,
+          setupFiles: ["./tests/dom/setup.ts"],
+        },
+      },
+      {
+        resolve: { alias },
+        test: {
           name: "integration",
           environment: "node",
           include: ["tests/integration/**/*.test.ts"],

@@ -171,7 +171,10 @@ function Balloons({ count = 16 }: { count?: number }) {
 
 function HappyBackdrop({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-sky-100 via-indigo-50 to-rose-100">
+    <div
+      data-testid="happy-backdrop"
+      className="relative min-h-screen bg-gradient-to-br from-sky-100 via-indigo-50 to-rose-100"
+    >
       <Balloons />
       <div className="relative z-10">{children}</div>
     </div>
