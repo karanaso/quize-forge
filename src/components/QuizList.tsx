@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { CopiedDrawer } from "@/components/CopiedDrawer";
 
 interface QuizSummary {
   id: string;
@@ -22,6 +23,7 @@ export function QuizList() {
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
   async function load() {
     const res = await fetch("/api/quiz");
@@ -59,8 +61,15 @@ export function QuizList() {
     if (res.ok) await load();
   }
 
-  function copyLink(id: string) {
-    navigator.clipboard.writeText(`${window.location.origin}/q/${id}`);
+  async function copyLink(id: string) {
+    const url = `${window.location.origin}/q/${id}`;
+    if (!navigator.clipboard?.writeText) return;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      return;
+    }
+    setCopiedUrl(url);
   }
 
   if (loading) return <p className="py-10 text-center text-zinc-700">Loading…</p>;
@@ -149,6 +158,9 @@ export function QuizList() {
           </div>
         </div>
       ))}
+      {copiedUrl && (
+        <CopiedDrawer url={copiedUrl} onDismiss={() => setCopiedUrl(null)} />
+      )}
     </div>
   );
 }
