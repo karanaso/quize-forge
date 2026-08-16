@@ -19,12 +19,30 @@ class NapiCanvasFactory {
     const canvas = createCanvas(width, height);
     return { canvas, context: canvas.getContext("2d") };
   }
+  reset(canvasAndContext: { canvas: HTMLCanvasElement }, width: number, height: number) {
+    canvasAndContext.canvas.width = width;
+    canvasAndContext.canvas.height = height;
+  }
+  destroy(canvasAndContext: {
+    canvas: HTMLCanvasElement | null;
+    context: unknown;
+  }) {
+    if (canvasAndContext.canvas) {
+      canvasAndContext.canvas.width = 0;
+      canvasAndContext.canvas.height = 0;
+    }
+    canvasAndContext.canvas = null;
+    canvasAndContext.context = null;
+  }
 }
 
 async function openDocument(data: Uint8Array) {
   const pdfjs = await loadPdfjs();
+  // pdfjs transfers (detaches) the buffer passed as `data`; copy so the
+  // caller's buffer stays intact across repeated rasterize/open calls.
+  const copy = new Uint8Array(data);
   const task = pdfjs.getDocument({
-    data,
+    data: copy,
     useWorkerFetch: false,
     useSystemFonts: true,
     CanvasFactory: NapiCanvasFactory,
@@ -96,74 +114,4 @@ export function cropRaster(
   const ctx = canvas.getContext("2d");
   ctx.drawImage(img, x, y, cw, ch, 0, 0, cw, ch);
   return canvas.toBuffer("image/png");
-}
-
-const ImageKind = {
-  GRAYSCALE_1BPP: 1,
-  RGB_24BPP: 2,
-  RGBA_32BPP: 3,
-  GRAYSCALE_8BPP: 4,
-  GRAYSCALE_16BPP: 5,
-  RGB_48BPP: 6,
-  RGBA_64BPP: 7,
-  GRAYSCALE_ALPHA_16BPP: 8,
-  SMASK: 9,
-  JPEG: 10,
-  PNG: 11,
-} as const;
-
-interface PdfImage {
-  kind: number;
-  data: Uint8Array;
-  width: number;
-  height: number;
-}
-
-const OPS_PAINT_IMAGE_XOBJECT = 83;
-
-/** Extract embedded raster images from a page, up to `max` images. */
-export async function extractPageImages(
-  data: Uint8Array,
-  pageNumber: number,
-  max = 12,
-): Promise<Buffer[]> {
-  const { doc, task } = await openDocument(data);
-  try {
-    const page = await doc.getPage(pageNumber);
-    try {
-      const opList = await page.getOperatorList();
-      const images: Buffer[] = [];
-      const seen = new Set<number>();
-      const argsList = opList.argsArray;
-      for (let i = 0; i < opList.fnArray.length; i++) {
-        if (opList.fnArray[i] !== OPS_PAINT_IMAGE_XOBJECT) continue;
-        if (images.length >= max) break;
-        const objId = argsList[i]?.[0] as number | undefined;
-        if (objId === undefined || seen.has(objId)) continue;
-        seen.add(objId);
-
-        const img = (await page.objs.get(String(objId))) as PdfImage | null;
-        if (!img || !img.data || !img.width || !img.height) continue;
-
-        if (img.kind === ImageKind.JPEG || img.kind === ImageKind.PNG) {
-          images.push(Buffer.from(img.data));
-        } else {
-          const c = createCanvas(img.width, img.height);
-          const ctx = c.getContext("2d");
-          const imageData = new ImageData(
-            new Uint8ClampedArray(img.data.buffer as ArrayBuffer),
-            img.width,
-            img.height,
-          );
-          ctx.putImageData(imageData, 0, 0);
-          images.push(c.toBuffer("image/png"));
-        }
-      }
-      return images;
-    } finally {
-      await page.cleanup();
-    }
-  } finally {
-    await closeDocument(task);
-  }
 }

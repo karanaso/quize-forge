@@ -49,6 +49,93 @@ function shuffle<T>(arr: T[]): T[] {
 
 const BALLOON_EMOJIS = ["🎈", "🎈", "🫧", "⭐", "💫", "🌈"];
 
+let audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  const Ctor =
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext;
+  if (!Ctor) return null;
+  if (!audioCtx) audioCtx = new Ctor();
+  return audioCtx;
+}
+
+function playTone(
+  ctx: AudioContext,
+  opts: {
+    freq: number;
+    endFreq?: number;
+    type?: OscillatorType;
+    duration?: number;
+    volume?: number;
+    startDelay?: number;
+  },
+) {
+  const {
+    freq,
+    endFreq,
+    type = "triangle",
+    duration = 0.15,
+    volume = 0.22,
+    startDelay = 0,
+  } = opts;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  const t0 = ctx.currentTime + startDelay;
+  osc.frequency.setValueAtTime(freq, t0);
+  if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, t0 + duration);
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(volume, t0 + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + duration + 0.05);
+}
+
+/** Playful rising "boing" when an answer is picked. */
+function playSelectSound(muted: boolean) {
+  if (muted) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  void ctx.resume();
+  playTone(ctx, { freq: 480, endFreq: 980, type: "triangle", duration: 0.13 });
+}
+
+/** Cheerful little arpeggio when the quiz is submitted. */
+function playSubmitSound(muted: boolean) {
+  if (muted) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  void ctx.resume();
+  [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) =>
+    playTone(ctx, {
+      freq,
+      type: "triangle",
+      duration: 0.22,
+      volume: 0.2,
+      startDelay: i * 0.09,
+    }),
+  );
+}
+
+const TETRIS_TEMPO = 150; // BPM (eighth-note pulse)
+
+// Korobeiniki (the Tetris theme), as [frequency, duration in eighths].
+// A null frequency is a rest.
+const TETRIS_MELODY: Array<[number | null, number]> = [
+  [659.25, 1], [493.88, 1], [523.25, 1], [587.33, 1], [523.25, 1], [493.88, 1], [440.0, 1], [440.0, 1],
+  [523.25, 1], [659.25, 1], [587.33, 1], [523.25, 1], [493.88, 1], [493.88, 1], [523.25, 1], [587.33, 1],
+  [659.25, 1], [523.25, 1], [440.0, 1], [440.0, 1],
+  [587.33, 1], [698.46, 1], [880.0, 1], [783.99, 1], [698.46, 1], [659.25, 1], [523.25, 1], [659.25, 1],
+  [587.33, 1], [523.25, 1], [493.88, 1], [493.88, 1],
+  [523.25, 1], [587.33, 1], [659.25, 1], [523.25, 1], [440.0, 1], [440.0, 1],
+  [659.25, 1], [523.25, 1], [587.33, 1], [493.88, 1], [523.25, 1], [440.0, 1], [440.0, 2],
+  [659.25, 1], [523.25, 1], [587.33, 1], [493.88, 1], [523.25, 1], [440.0, 1], [440.0, 2],
+];
+
 function Balloons({ count = 16 }: { count?: number }) {
   const balloons = useMemo(
     () =>
@@ -177,17 +264,61 @@ function QuizRunner({
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(quiz.config.timerMinutes * 60);
+  const [muted, setMuted] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("quizforge:muted") === "1";
+  });
   const startedAtRef = useRef<Date>(new Date());
   const submittedRef = useRef(false);
   const answersRef = useRef<Answer[]>(answers);
+  const mutedRef = useRef(muted);
+  useEffect(() => {
+    mutedRef.current = muted;
+  }, [muted]);
+
   useEffect(() => {
     answersRef.current = answers;
   }, [answers]);
+
+  // Looping Tetris-style background tune while the quiz runs.
+  useEffect(() => {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    let index = 0;
+    const eighthMs = (60 / TETRIS_TEMPO / 2) * 1000;
+    const timer = setInterval(() => {
+      if (ctx.state !== "running") {
+        void ctx.resume();
+        return;
+      }
+      if (mutedRef.current) return; // paused while muted, resumes in sync
+      const [freq, beats] = TETRIS_MELODY[index];
+      if (freq) {
+        playTone(ctx, {
+          freq,
+          type: "square",
+          duration: (eighthMs * beats) / 1000 * 0.92,
+          volume: 0.045,
+        });
+      }
+      index = (index + 1) % TETRIS_MELODY.length;
+    }, eighthMs);
+    return () => clearInterval(timer);
+  }, []);
+
+  const toggleMute = () => {
+    setMuted((m) => {
+      const next = !m;
+      window.localStorage.setItem("quizforge:muted", next ? "1" : "0");
+      return next;
+    });
+  };
 
   const submit = async () => {
     if (submittedRef.current) return;
     submittedRef.current = true;
     setSubmitting(true);
+    playSubmitSound(muted);
     const res = await fetch("/api/attempt", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -232,6 +363,7 @@ function QuizRunner({
   }, [orderedQuestions]);
 
   const setAnswer = (questionId: string, patch: Partial<Answer>) => {
+    playSelectSound(muted);
     setAnswers((prev) => {
       const idx = prev.findIndex((a) => a.questionId === questionId);
       if (idx < 0) return [...prev, { questionId, kind: "", ...patch } as Answer];
@@ -261,16 +393,28 @@ function QuizRunner({
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-8">
-      <div className="quiz-pop-in flex items-center justify-between rounded-2xl border border-white/60 bg-white/85 px-4 py-3 shadow-lg shadow-indigo-100 backdrop-blur">
-        <h1 className="text-lg font-bold text-zinc-900">✨ {quiz.title}</h1>
-        <div
-          className={`rounded-full px-3 py-1 text-sm font-bold ${
-            secondsLeft <= 30
-              ? "animate-pulse bg-rose-100 text-rose-600"
-              : "bg-sky-100 text-sky-700"
-          }`}
-        >
-          ⏱ {mins}:{secs}
+      <div className="sticky top-0 z-30 -mx-4 flex items-center justify-between gap-3 border-b border-white/60 bg-white/90 px-4 py-3 shadow-lg shadow-indigo-100/60 backdrop-blur">
+        <h1 className="min-w-0 truncate text-lg font-bold text-zinc-900">
+          ✨ {quiz.title}
+        </h1>
+        <div className="flex shrink-0 items-center gap-2">
+          <div
+            className={`rounded-full px-3 py-1 text-sm font-bold ${
+              secondsLeft <= 30
+                ? "animate-pulse bg-rose-100 text-rose-600"
+                : "bg-sky-100 text-sky-700"
+            }`}
+          >
+            ⏱ {mins}:{secs}
+          </div>
+          <button
+            onClick={toggleMute}
+            title={muted ? "Unmute sounds" : "Mute sounds"}
+            aria-label={muted ? "Unmute sounds" : "Mute sounds"}
+            className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-sm transition-colors hover:bg-zinc-50"
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
         </div>
       </div>
 

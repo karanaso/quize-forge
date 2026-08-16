@@ -63,13 +63,13 @@ export function QuizList() {
     navigator.clipboard.writeText(`${window.location.origin}/q/${id}`);
   }
 
-  if (loading) return <p className="py-10 text-center text-zinc-500">Loading…</p>;
+  if (loading) return <p className="py-10 text-center text-zinc-700">Loading…</p>;
   if (error) return <p className="py-10 text-center text-red-600">{error}</p>;
 
   if (quizzes.length === 0) {
     return (
       <div className="py-16 text-center">
-        <p className="mb-4 text-zinc-600">
+        <p className="mb-4 text-zinc-700">
           No quizzes yet. Upload a PDF and let the AI build one for you.
         </p>
         <Link
@@ -102,7 +102,7 @@ export function QuizList() {
                 {q.status}
               </span>
             </div>
-            <p className="mt-0.5 text-sm text-zinc-500">
+            <p className="mt-0.5 text-sm text-zinc-700">
               {q.sourceFilename ?? "Imported PDF"} · pages {q.pageFrom}–{q.pageTo} ·{" "}
               {q.questionCount} questions · {q.timerMinutes} min · {q.difficulty} ·{" "}
               {q.language}

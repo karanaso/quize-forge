@@ -22,7 +22,7 @@ export function NavBar() {
           <Link href="/create" className="rounded-lg bg-indigo-600 px-3 py-1.5 font-medium text-white hover:bg-indigo-700">
             + New quiz
           </Link>
-          <button onClick={logout} className="text-zinc-500 hover:text-zinc-900">
+          <button onClick={logout} className="text-zinc-700 hover:text-zinc-900">
             Sign out
           </button>
         </div>

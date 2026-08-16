@@ -55,6 +55,7 @@ export async function streamImage(
   const b = bucket();
   const _id = new mongoose.Types.ObjectId(id);
   const file = await b.find({ _id }).next();
+  if (!file) throw new Error("Image not found");
   setHeaders({
     contentType: (file?.metadata?.contentType as string) ?? "image/png",
     length: file?.length ?? 0,

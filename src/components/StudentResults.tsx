@@ -86,7 +86,7 @@ export function StudentResults({
   if (!result) {
     return (
       <div className="mx-auto max-w-md space-y-4 rounded-xl border border-zinc-200 bg-white p-6 text-center">
-        <p className="text-zinc-600">No attempt found for this quiz.</p>
+        <p className="text-zinc-700">No attempt found for this quiz.</p>
         <Link href={`/q/${quizId}`} className="text-sm text-indigo-600 hover:underline">
           Take the quiz
         </Link>
@@ -100,7 +100,7 @@ export function StudentResults({
     <div className="mx-auto w-full max-w-2xl space-y-4">
       <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center">
         <h1 className="text-xl font-bold text-zinc-900">{quizTitle}</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-zinc-700">
           {result.correctCount} of {result.totalQuestions} correct
         </p>
         <p className="mt-2 text-4xl font-extrabold text-indigo-600">
@@ -117,7 +117,7 @@ export function StudentResults({
           <Link
             href={`/q/${quizId}`}
             onClick={() => sessionStorage.removeItem(`quizforge:result:${quizId}`)}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50"
+            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
           >
             Back
           </Link>
@@ -157,10 +157,10 @@ export function StudentResults({
                 </p>
               )}
               {g.explanation && (
-                <p className="mt-1 text-sm text-zinc-600">{g.explanation}</p>
+                <p className="mt-1 text-sm text-zinc-700">{g.explanation}</p>
               )}
               {stat && stat.total > 0 && (
-                <p className="mt-2 text-xs text-zinc-500">
+                <p className="mt-2 text-xs text-zinc-700">
                   {stat.percent}% of other students answered correctly (
                   {stat.correct}/{stat.total})
                 </p>

@@ -58,9 +58,12 @@ export async function POST(request: Request) {
     gridfsId,
   });
 
-  return NextResponse.json({
-    pdfId: doc._id.toString(),
-    filename: file.name,
-    pageCount,
-  });
+  return NextResponse.json(
+    {
+      pdfId: doc._id.toString(),
+      filename: file.name,
+      pageCount,
+    },
+    { status: 201 },
+  );
 }

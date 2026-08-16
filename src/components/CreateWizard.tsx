@@ -123,7 +123,7 @@ export function CreateWizard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-zinc-500">
+      <div className="flex items-center gap-2 text-sm text-zinc-700">
         {(["1. Upload", "2. Configure", "3. Generate", "4. Review"] as const).map(
           (label, i) => (
             <div key={label} className="flex items-center gap-2">
@@ -131,7 +131,7 @@ export function CreateWizard() {
                 className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                   step === (i + 1) as 1 | 2 | 3 | 4
                     ? "bg-indigo-600 text-white"
-                    : "bg-zinc-100 text-zinc-600"
+                    : "bg-zinc-100 text-zinc-700"
                 }`}
               >
                 {label}
@@ -148,9 +148,9 @@ export function CreateWizard() {
             type="file"
             accept="application/pdf"
             onChange={(e) => onFile(e.target.files?.[0] ?? null)}
-            className="mx-auto block w-full max-w-md text-sm text-zinc-600 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-indigo-700"
+            className="mx-auto block w-full max-w-md text-sm text-zinc-700 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-indigo-700"
           />
-          {uploading && <p className="text-sm text-zinc-500">Uploading…</p>}
+          {uploading && <p className="text-sm text-zinc-700">Uploading…</p>}
           {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
           <p className="text-xs text-zinc-400">
             PDF up to 20 pages, 50 MB. You&apos;ll pick a 1–10 page range next.
@@ -159,10 +159,10 @@ export function CreateWizard() {
           {store.pdf && (
             <div className="mx-auto max-w-md rounded-lg bg-zinc-50 p-4 text-left text-sm">
               <p className="font-medium text-zinc-800">{store.pdf.filename}</p>
-              <p className="text-zinc-500">{store.pdf.pageCount} pages</p>
+              <p className="text-zinc-700">{store.pdf.pageCount} pages</p>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="text-xs font-medium text-zinc-600">From page</span>
+                  <span className="text-xs font-medium text-zinc-700">From page</span>
                   <input
                     type="number"
                     min={1}
@@ -176,7 +176,7 @@ export function CreateWizard() {
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-medium text-zinc-600">To page</span>
+                  <span className="text-xs font-medium text-zinc-700">To page</span>
                   <input
                     type="number"
                     min={1}
@@ -320,7 +320,7 @@ export function CreateWizard() {
       {step === 3 && (
         <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-8 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-zinc-700">
             {store.progress ?? "Preparing…"}
           </p>
           <p className="text-xs text-zinc-400">

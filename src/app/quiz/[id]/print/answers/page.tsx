@@ -54,7 +54,7 @@ export default async function AnswersPrintPage({
 
       <div className="mb-6 border-b border-zinc-300 pb-4">
         <h1 className="text-2xl font-bold">{doc.title} — Answer Key</h1>
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-zinc-700">
           {doc.questions.length} questions · {doc.config.timerMinutes} minutes
         </p>
       </div>
@@ -63,7 +63,7 @@ export default async function AnswersPrintPage({
         <div key={q.id} className="mb-4 break-inside-avoid">
           <p className="font-medium">
             {i + 1}. {q.text}
-            {q.points > 1 && <span className="text-sm text-zinc-500"> ({q.points} pts)</span>}
+            {q.points > 1 && <span className="text-sm text-zinc-700"> ({q.points} pts)</span>}
           </p>
           {q.imageId && (
             <Image
@@ -79,7 +79,7 @@ export default async function AnswersPrintPage({
             <span className="font-semibold">Answer:</span> {answerFor(q)}
           </p>
           {q.explanation && (
-            <p className="mt-1 text-xs text-zinc-500">Explanation: {q.explanation}</p>
+            <p className="mt-1 text-xs text-zinc-700">Explanation: {q.explanation}</p>
           )}
         </div>
       ))}

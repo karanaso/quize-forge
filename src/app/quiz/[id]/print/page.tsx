@@ -65,7 +65,7 @@ function renderQuestion(q: PersistedQuestion, idx: number) {
     <div key={q.id} className="mb-5 break-inside-avoid">
       <p className="font-medium">
         {idx + 1}. {q.text}
-        {q.points > 1 && <span className="text-sm text-zinc-500"> ({q.points} pts)</span>}
+        {q.points > 1 && <span className="text-sm text-zinc-700"> ({q.points} pts)</span>}
       </p>
       {q.imageId && (
         <Image
@@ -115,11 +115,11 @@ export default async function PrintPage({
 
       <div className="mb-6 border-b border-zinc-300 pb-4">
         <h1 className="text-2xl font-bold">{doc.title}</h1>
-        <p className="text-sm text-zinc-600">
+        <p className="text-sm text-zinc-700">
           {doc.sourceFilename ?? "Quiz"} · pages {doc.pageFrom}–{doc.pageTo} ·{" "}
           {doc.questions.length} questions · {doc.config.timerMinutes} minutes
         </p>
-        <p className="mt-2 text-sm text-zinc-600">
+        <p className="mt-2 text-sm text-zinc-700">
           Name: ______________________ &nbsp;&nbsp;&nbsp; Class:
           ______________________ &nbsp;&nbsp;&nbsp; Date:
           ______________________

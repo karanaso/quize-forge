@@ -12,7 +12,7 @@ export function QuestionEditor({
   return (
     <div className="space-y-3">
       <label className="block">
-        <span className="text-xs font-medium text-zinc-500">Question text</span>
+        <span className="text-xs font-medium text-zinc-700">Question text</span>
         <textarea
           value={question.text}
           onChange={(e) => onChange({ text: e.target.value })}
@@ -23,7 +23,7 @@ export function QuestionEditor({
 
       {question.kind === "mc" && (
         <div className="space-y-2">
-          <span className="text-xs font-medium text-zinc-500">Options</span>
+          <span className="text-xs font-medium text-zinc-700">Options</span>
           {question.options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
@@ -61,7 +61,7 @@ export function QuestionEditor({
       {question.kind === "fill" && (
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="text-xs font-medium text-zinc-500">The blank</span>
+            <span className="text-xs font-medium text-zinc-700">The blank</span>
             <input
               value={question.blank}
               onChange={(e) => onChange({ blank: e.target.value })}
@@ -69,7 +69,7 @@ export function QuestionEditor({
             />
           </label>
           <label className="block">
-            <span className="text-xs font-medium text-zinc-500">
+            <span className="text-xs font-medium text-zinc-700">
               Acceptable answers (one per line)
             </span>
             <textarea
@@ -91,7 +91,7 @@ export function QuestionEditor({
 
       {question.kind === "matching" && (
         <div className="space-y-2">
-          <span className="text-xs font-medium text-zinc-500">Pairs (term → definition)</span>
+          <span className="text-xs font-medium text-zinc-700">Pairs (term → definition)</span>
           {question.pairs.map((pair, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
@@ -120,7 +120,7 @@ export function QuestionEditor({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block">
-          <span className="text-xs font-medium text-zinc-500">Points</span>
+          <span className="text-xs font-medium text-zinc-700">Points</span>
           <input
             type="number"
             min={1}
@@ -131,7 +131,7 @@ export function QuestionEditor({
           />
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-zinc-500">Explanation</span>
+          <span className="text-xs font-medium text-zinc-700">Explanation</span>
           <input
             value={question.explanation}
             onChange={(e) => onChange({ explanation: e.target.value })}
