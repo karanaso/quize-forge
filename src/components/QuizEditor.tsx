@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEditorStore } from "@/stores/editor";
+import { useI18n } from "@/stores/locale";
 import { QuestionEditor } from "@/components/QuestionEditor";
 import { QuizImage } from "@/components/QuizImage";
 import type { PersistedQuestion } from "@/lib/schemas";
 
-const KIND_LABEL: Record<string, string> = {
+const KIND_LABEL_KEYS: Record<string, string> = {
   mc: "Multiple choice",
   tf: "True/False",
   fill: "Fill in the blank",
@@ -27,6 +28,7 @@ export function QuizEditor({
 }) {
   const router = useRouter();
   const store = useEditorStore();
+  const { t } = useI18n();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export function QuizEditor({
     setSaving(false);
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      setError(data?.error ?? "Save failed");
+      setError(data?.error ?? t("Common", "Save failed"));
       return;
     }
     store.markSaved();
@@ -75,7 +77,7 @@ export function QuizEditor({
     const q: PersistedQuestion = {
       id: crypto.randomUUID(),
       kind: "mc",
-      text: "New question",
+      text: t("QuizEditor", "New question"),
       options: ["", "", "", ""],
       correctIndex: 0,
       points: 1,
@@ -99,20 +101,28 @@ export function QuizEditor({
               : "bg-amber-100 text-amber-700"
           }`}
         >
-          {initialStatus}
+          {initialStatus === "published"
+            ? t("QuizEditor", "published")
+            : t("QuizEditor", "draft")}
         </span>
         <button
           onClick={save}
           disabled={saving || !store.dirty}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40"
         >
-          {saved ? "Saved" : saving ? "Saving…" : "Save"}
+          {saved
+            ? t("QuizEditor", "Saved")
+            : saving
+              ? t("QuizEditor", "Saving…")
+              : t("QuizEditor", "Save")}
         </button>
         <button
           onClick={publish}
           className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
         >
-          {initialStatus === "published" ? "Re-publish" : "Publish"}
+          {initialStatus === "published"
+            ? t("QuizEditor", "Re-publish")
+            : t("QuizEditor", "Publish")}
         </button>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -124,9 +134,11 @@ export function QuizEditor({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-zinc-400">#{idx + 1}</span>
                 <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700">
-                  {KIND_LABEL[q.kind]}
+                  {t("Common", KIND_LABEL_KEYS[q.kind] ?? q.kind)}
                 </span>
-                <span className="text-xs text-zinc-400">{q.points} pt</span>
+                <span className="text-xs text-zinc-400">
+                  {t("QuizEditor", "{points} pt", { points: q.points })}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <button
@@ -147,13 +159,13 @@ export function QuizEditor({
                   onClick={() => store.deleteQuestion(q.id)}
                   className="rounded border border-red-200 px-2 py-0.5 text-xs text-red-600 hover:bg-red-50"
                 >
-                  Delete
+                  {t("QuizEditor", "Delete")}
                 </button>
               </div>
             </div>
             {q.imageId && (
               <div className="mb-3">
-                <QuizImage imageId={q.imageId} alt={q.imageCaption ?? "figure"} />
+                <QuizImage imageId={q.imageId} alt={q.imageCaption ?? t("Common", "figure")} />
               </div>
             )}
             <QuestionEditor
@@ -168,7 +180,7 @@ export function QuizEditor({
         onClick={addQuestion}
         className="w-full rounded-xl border-2 border-dashed border-zinc-300 py-3 text-sm font-medium text-zinc-700 hover:border-indigo-400 hover:text-indigo-600"
       >
-        + Add question
+        {t("QuizEditor", "+ Add question")}
       </button>
     </div>
   );

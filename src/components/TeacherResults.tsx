@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/stores/locale";
 
 interface ResponseDetail {
   questionId: string;
@@ -40,24 +41,26 @@ export function TeacherResults({
   quizId: string;
   questionCount: number;
 }) {
+  const { t, locale } = useI18n();
   const [data, setData] = useState<AttemptsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [viewing, setViewing] = useState<StudentRow | null>(null);
 
   useEffect(() => {
-    fetch(`/api/quiz/${quizId}/attempts`)
+    fetch(`/api/quiz/${quizId}/attempts?lang=${locale}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then(setData)
-      .catch(() => setError("Failed to load results"));
-  }, [quizId]);
+      .catch(() => setError(t("TeacherResults", "Failed to load results")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quizId, locale]);
 
   if (error) return <p className="py-10 text-center text-red-600">{error}</p>;
-  if (!data) return <p className="py-10 text-center text-zinc-700">Loading…</p>;
+  if (!data) return <p className="py-10 text-center text-zinc-700">{t("Common", "Loading…")}</p>;
 
   if (data.totalStudents === 0) {
     return (
       <p className="py-10 text-center text-zinc-700">
-        No attempts yet. Share the student link to start collecting results.
+        {t("TeacherResults", "No attempts yet. Share the student link to start collecting results.")}
       </p>
     );
   }
@@ -66,15 +69,15 @@ export function TeacherResults({
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <p className="text-xs text-zinc-700">Students</p>
+          <p className="text-xs text-zinc-700">{t("TeacherResults", "Students")}</p>
           <p className="mt-1 text-2xl font-bold">{data.totalStudents}</p>
         </div>
         <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <p className="text-xs text-zinc-700">Total attempts</p>
+          <p className="text-xs text-zinc-700">{t("TeacherResults", "Total attempts")}</p>
           <p className="mt-1 text-2xl font-bold">{data.totalAttempts}</p>
         </div>
         <div className="rounded-xl border border-zinc-200 bg-white p-4">
-          <p className="text-xs text-zinc-700">Average score (best)</p>
+          <p className="text-xs text-zinc-700">{t("TeacherResults", "Average score (best)")}</p>
           <p className="mt-1 text-2xl font-bold">
             {data.averageScore} / {questionCount * 1}
           </p>
@@ -85,13 +88,13 @@ export function TeacherResults({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-200 text-left text-xs uppercase text-zinc-700">
-              <th className="px-4 py-2">School</th>
-              <th className="px-4 py-2">Class</th>
-              <th className="px-4 py-2">Student</th>
-              <th className="px-4 py-2 text-right">Best score</th>
-              <th className="px-4 py-2 text-right">Correct</th>
-              <th className="px-4 py-2 text-right">Attempts</th>
-              <th className="px-4 py-2 text-right">Responses</th>
+              <th className="px-4 py-2">{t("TeacherResults", "School")}</th>
+              <th className="px-4 py-2">{t("TeacherResults", "Class")}</th>
+              <th className="px-4 py-2">{t("TeacherResults", "Student")}</th>
+              <th className="px-4 py-2 text-right">{t("TeacherResults", "Best score")}</th>
+              <th className="px-4 py-2 text-right">{t("TeacherResults", "Correct")}</th>
+              <th className="px-4 py-2 text-right">{t("TeacherResults", "Attempts")}</th>
+              <th className="px-4 py-2 text-right">{t("TeacherResults", "Responses")}</th>
             </tr>
           </thead>
           <tbody>
@@ -110,7 +113,7 @@ export function TeacherResults({
                     onClick={() => setViewing(s)}
                     className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
                   >
-                    View responses
+                    {t("TeacherResults", "View responses")}
                   </button>
                 </td>
               </tr>
@@ -127,13 +130,15 @@ export function TeacherResults({
       )}
 
       <div>
-        <h2 className="mb-2 text-lg font-semibold">Per-question difficulty</h2>
+        <h2 className="mb-2 text-lg font-semibold">{t("TeacherResults", "Per-question difficulty")}</h2>
         <div className="space-y-2">
           {Object.entries(data.perQuestion)
             .sort((a, b) => a[1].percent - b[1].percent)
             .map(([qid, stat], i) => (
               <div key={qid} className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm">
-                <span className="w-6 text-zinc-400">Q{i + 1}</span>
+                <span className="w-6 text-zinc-400">
+                  {t("TeacherResults", "Q{index}", { index: i + 1 })}
+                </span>
                 <div className="h-2 flex-1 rounded-full bg-zinc-100">
                   <div
                     className={`h-2 rounded-full ${
@@ -157,9 +162,9 @@ export function TeacherResults({
   );
 }
 
-const KIND_LABELS: Record<string, string> = {
+const KIND_LABEL_KEYS: Record<string, string> = {
   mc: "Multiple choice",
-  tf: "True / False",
+  tf: "True/False",
   fill: "Fill in the blank",
   matching: "Matching",
 };
@@ -171,6 +176,7 @@ function ResponseModal({
   student: StudentRow;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
@@ -184,15 +190,19 @@ function ResponseModal({
           <div>
             <h3 className="text-lg font-bold text-zinc-900">{student.studentName}</h3>
             <p className="text-sm text-zinc-700">
-              {student.school} · {student.className} · {student.score} /{" "}
-              {student.totalPoints} points
+              {t("TeacherResults", "{school} · {className} · {score} / {total} points", {
+                school: student.school,
+                className: student.className,
+                score: student.score,
+                total: student.totalPoints,
+              })}
             </p>
           </div>
           <button
             onClick={onClose}
             className="rounded-lg border border-zinc-200 px-3 py-1 text-sm text-zinc-700 hover:bg-zinc-50"
           >
-            Close
+            {t("TeacherResults", "Close")}
           </button>
         </div>
 
@@ -216,18 +226,18 @@ function ResponseModal({
               </div>
               <p className="mt-1 text-zinc-700">
                 <span className="text-xs uppercase text-zinc-500">
-                  {KIND_LABELS[r.kind] ?? r.kind}
+                  {t("Common", KIND_LABEL_KEYS[r.kind] ?? r.kind)}
                 </span>
               </p>
               <p className="mt-2">
-                <span className="font-semibold text-zinc-800">Your answer: </span>
+                <span className="font-semibold text-zinc-800">{t("TeacherResults", "Your answer:")}</span>{" "}
                 <span className={r.correct ? "text-emerald-700" : "text-red-700"}>
                   {r.studentAnswer}
                 </span>
               </p>
               {!r.correct && (
                 <p className="mt-1">
-                  <span className="font-semibold text-zinc-800">Correct: </span>
+                  <span className="font-semibold text-zinc-800">{t("TeacherResults", "Correct:")}</span>{" "}
                   <span className="text-emerald-700">{r.correctAnswer}</span>
                 </p>
               )}

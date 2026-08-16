@@ -3,6 +3,7 @@ import { requireTeacher } from "@/lib/auth";
 import { dbConnect, isValidObjectId } from "@/lib/db";
 import { Quiz } from "@/lib/models/quiz";
 import { PrintButton } from "@/components/PrintButton";
+import { renderT } from "@/lib/i18n-server";
 import type { PersistedQuestion } from "@/lib/schemas";
 import { notFound } from "next/navigation";
 
@@ -26,10 +27,12 @@ function renderQuestion(q: PersistedQuestion, idx: number) {
         return (
           <div className="mt-2 flex gap-6 pl-5 text-zinc-700">
             <span className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 rounded-full border border-zinc-400" /> True
+              <span className="inline-block h-3 w-3 rounded-full border border-zinc-400" />{" "}
+              <PrintWord ns="Print" keyName="True" />
             </span>
             <span className="flex items-center gap-2">
-              <span className="inline-block h-3 w-3 rounded-full border border-zinc-400" /> False
+              <span className="inline-block h-3 w-3 rounded-full border border-zinc-400" />{" "}
+              <PrintWord ns="Print" keyName="False" />
             </span>
           </div>
         );
@@ -82,6 +85,10 @@ function renderQuestion(q: PersistedQuestion, idx: number) {
   );
 }
 
+async function PrintWord({ ns, keyName }: { ns: string; keyName: string }) {
+  return <>{await renderT(ns, keyName)}</>;
+}
+
 export default async function PrintPage({
   params,
 }: {
@@ -100,14 +107,16 @@ export default async function PrintPage({
   return (
     <div className="mx-auto max-w-3xl px-8 py-8">
       <div className="mb-8 flex items-start justify-between print:hidden">
-        <h1 className="text-xl font-bold text-zinc-900">Print</h1>
+        <h1 className="text-xl font-bold text-zinc-900">
+          {await renderT("Print", "Print")}
+        </h1>
         <div className="flex gap-2">
           <a
             href={`/quiz/${id}/print/answers`}
             target="_blank"
             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50"
           >
-            Answer key
+            {await renderT("Print", "Answer key")}
           </a>
           <PrintButton />
         </div>
@@ -116,13 +125,16 @@ export default async function PrintPage({
       <div className="mb-6 border-b border-zinc-300 pb-4">
         <h1 className="text-2xl font-bold">{doc.title}</h1>
         <p className="text-sm text-zinc-700">
-          {doc.sourceFilename ?? "Quiz"} · pages {doc.pageFrom}–{doc.pageTo} ·{" "}
-          {doc.questions.length} questions · {doc.config.timerMinutes} minutes
+          {await renderT("Print", "{source} · pages {from}–{to} · {count} questions · {minutes} minutes", {
+            source: doc.sourceFilename ?? (await renderT("Print", "Quiz")),
+            from: doc.pageFrom,
+            to: doc.pageTo,
+            count: doc.questions.length,
+            minutes: doc.config.timerMinutes,
+          })}
         </p>
         <p className="mt-2 text-sm text-zinc-700">
-          Name: ______________________ &nbsp;&nbsp;&nbsp; Class:
-          ______________________ &nbsp;&nbsp;&nbsp; Date:
-          ______________________
+          {await renderT("Print", "Name: ______________________ Class: ______________________ Date: ______________________")}
         </p>
       </div>
 

@@ -167,6 +167,7 @@ describe("generationRequestSchema", () => {
     expect(parsed.questionCount).toBe(10);
     expect(parsed.difficulty).toBe("medium");
     expect(parsed.timerMinutes).toBe(10);
+    expect(parsed.uiLang).toBe("en");
   });
 
   it("bounds question count and page range", () => {

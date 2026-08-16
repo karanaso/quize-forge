@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useStudentStore } from "@/stores/student";
+import { useI18n } from "@/stores/locale";
+import { LangToggle } from "@/components/LangToggle";
 import { QuizImage } from "@/components/QuizImage";
 import type { StudentIdentity } from "@/lib/schemas";
 
@@ -200,6 +202,7 @@ export function StudentQuiz({ quiz }: { quiz: PublicQuiz }) {
 }
 
 function IdentityForm({ onSubmit }: { onSubmit: (id: StudentIdentity) => void }) {
+  const { t } = useI18n();
   const [school, setSchool] = useState("");
   const [className, setClassName] = useState("");
   const [studentName, setStudentName] = useState("");
@@ -212,15 +215,18 @@ function IdentityForm({ onSubmit }: { onSubmit: (id: StudentIdentity) => void })
       }}
       className="quiz-pop-in mx-auto w-full max-w-md space-y-4 rounded-2xl border border-white/60 bg-white/85 p-6 shadow-lg shadow-indigo-100 backdrop-blur"
     >
+      <div className="flex items-center justify-end">
+        <LangToggle />
+      </div>
       <div className="text-center">
         <div className="quiz-wiggle mb-1 text-4xl">🎈</div>
-        <h2 className="text-lg font-semibold text-zinc-900">Before you start</h2>
+        <h2 className="text-lg font-semibold text-zinc-900">{t("StudentQuiz", "Before you start")}</h2>
         <p className="mt-1 text-sm text-zinc-700">
-          Tell us who you are — then let&apos;s have fun!
+          {t("StudentQuiz", "Tell us who you are — then let's have fun!")}
         </p>
       </div>
       <label className="block">
-        <span className="text-sm font-medium text-zinc-700">School name</span>
+        <span className="text-sm font-medium text-zinc-700">{t("StudentQuiz", "School name")}</span>
         <input
           required
           value={school}
@@ -229,7 +235,7 @@ function IdentityForm({ onSubmit }: { onSubmit: (id: StudentIdentity) => void })
         />
       </label>
       <label className="block">
-        <span className="text-sm font-medium text-zinc-700">Class name</span>
+        <span className="text-sm font-medium text-zinc-700">{t("StudentQuiz", "Class name")}</span>
         <input
           required
           value={className}
@@ -238,7 +244,7 @@ function IdentityForm({ onSubmit }: { onSubmit: (id: StudentIdentity) => void })
         />
       </label>
       <label className="block">
-        <span className="text-sm font-medium text-zinc-700">Your name</span>
+        <span className="text-sm font-medium text-zinc-700">{t("StudentQuiz", "Your name")}</span>
         <input
           required
           value={studentName}
@@ -250,7 +256,7 @@ function IdentityForm({ onSubmit }: { onSubmit: (id: StudentIdentity) => void })
         type="submit"
         className="w-full rounded-lg bg-gradient-to-r from-sky-500 to-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-transform hover:scale-[1.02] hover:from-sky-600 hover:to-indigo-700 active:scale-95"
       >
-        Let&apos;s go 🚀
+        {t("StudentQuiz", "Let's go 🚀")}
       </button>
     </form>
   );
@@ -264,6 +270,7 @@ function QuizRunner({
   identity: StudentIdentity;
 }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(quiz.config.timerMinutes * 60);
@@ -334,7 +341,7 @@ function QuizRunner({
     });
     if (!res.ok) {
       setSubmitting(false);
-      alert("Could not submit — please try again.");
+      alert(t("StudentQuiz", "Could not submit — please try again."));
       submittedRef.current = false;
       return;
     }
@@ -410,10 +417,11 @@ function QuizRunner({
           >
             ⏱ {mins}:{secs}
           </div>
+          <LangToggle />
           <button
             onClick={toggleMute}
-            title={muted ? "Unmute sounds" : "Mute sounds"}
-            aria-label={muted ? "Unmute sounds" : "Mute sounds"}
+            title={muted ? t("StudentQuiz", "Unmute sounds") : t("StudentQuiz", "Mute sounds")}
+            aria-label={muted ? t("StudentQuiz", "Unmute sounds") : t("StudentQuiz", "Mute sounds")}
             className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-sm transition-colors hover:bg-zinc-50"
           >
             {muted ? "🔇" : "🔊"}
@@ -431,11 +439,11 @@ function QuizRunner({
             {idx + 1}. {q.text}
             {q.points > 1 && (
               <span className="ml-2 text-xs font-normal text-zinc-700">
-                {q.points} pts
+                {t("StudentQuiz", "{points} pts", { points: q.points })}
               </span>
             )}
           </p>
-          <QuizImage imageId={q.imageId} alt={q.imageCaption ?? "figure"} className="my-3" />
+          <QuizImage imageId={q.imageId} alt={q.imageCaption ?? t("Common", "figure")} className="my-3" />
 
           {q.kind === "mc" && q.options && (
             <div className="mt-3 space-y-2">
@@ -488,7 +496,9 @@ function QuizRunner({
                     onChange={() => setAnswer(q.id, { kind: "tf", value: val })}
                     className="h-4 w-4 accent-sky-500"
                   />
-                  {val ? "True ✅" : "False ❌"}
+                  {val
+                    ? t("StudentQuiz", "True ✅")
+                    : t("StudentQuiz", "False ❌")}
                 </label>
               ))}
             </div>
@@ -500,7 +510,7 @@ function QuizRunner({
                 (answers.find((a) => a.questionId === q.id)?.text as string) ?? ""
               }
               onChange={(e) => setAnswer(q.id, { kind: "fill", text: e.target.value })}
-              placeholder="Type your answer… ✏️"
+              placeholder={t("StudentQuiz", "Type your answer… ✏️")}
               className="mt-3 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm transition-colors focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
             />
           )}
@@ -529,7 +539,7 @@ function QuizRunner({
                       }}
                       className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 transition-colors focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200"
                     >
-                      <option value="">— select —</option>
+                      <option value="">{t("StudentQuiz", "— select —")}</option>
                       {rightOptions.map((rightIdx) => (
                         <option
                           key={rightIdx}
@@ -553,7 +563,9 @@ function QuizRunner({
           disabled={submitting}
           className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition-all hover:scale-[1.01] hover:from-emerald-600 hover:to-teal-700 active:scale-95 disabled:opacity-50"
         >
-          {submitting ? "Submitting…" : "Finish & check my answers 🎉"}
+          {submitting
+            ? t("StudentQuiz", "Submitting…")
+            : t("StudentQuiz", "Finish & check my answers 🎉")}
         </button>
       </div>
     </div>

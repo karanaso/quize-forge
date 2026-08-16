@@ -3,6 +3,7 @@ import { Quiz } from "@/lib/models/quiz";
 import { Attempt } from "@/lib/models/attempt";
 import { dbConnect, isValidObjectId } from "@/lib/db";
 import { requireTeacher } from "@/lib/auth";
+import { serverT, type Locale } from "@/lib/i18n";
 import { computeQuestionStats, type RawAttempt } from "@/lib/stats";
 
 export const runtime = "nodejs";
@@ -31,13 +32,15 @@ interface QuizQuestion {
   pairs?: { left: string; right: string }[];
 }
 
-function correctAnswerText(q: QuizQuestion | undefined): string {
+function correctAnswerText(q: QuizQuestion | undefined, locale: Locale): string {
   if (!q) return "—";
   switch (q.kind) {
     case "mc":
       return q.options?.[q.correctIndex ?? -1] ?? "—";
     case "tf":
-      return q.correct ? "True" : "False";
+      return q.correct
+        ? serverT(locale, "Common", "True")
+        : serverT(locale, "Common", "False");
     case "fill":
       return q.acceptableAnswers?.join(" / ") ?? "—";
     case "matching":
@@ -47,28 +50,39 @@ function correctAnswerText(q: QuizQuestion | undefined): string {
   }
 }
 
-function studentAnswerText(ans: StoredAnswer, q: QuizQuestion | undefined): string {
+function studentAnswerText(
+  ans: StoredAnswer,
+  q: QuizQuestion | undefined,
+  locale: Locale,
+): string {
+  const noAnswer = serverT(locale, "Common", "No answer");
   switch (ans.kind) {
     case "mc":
       return typeof ans.selectedIndex === "number"
-        ? q?.options?.[ans.selectedIndex] ?? `Option ${ans.selectedIndex + 1}`
-        : "No answer";
+        ? q?.options?.[ans.selectedIndex] ??
+            serverT(locale, "Common", "Option {index}", { index: ans.selectedIndex + 1 })
+        : noAnswer;
     case "tf":
-      return ans.value === true ? "True" : ans.value === false ? "False" : "No answer";
+      return ans.value === true
+        ? serverT(locale, "Common", "True")
+        : ans.value === false
+          ? serverT(locale, "Common", "False")
+          : noAnswer;
     case "fill":
-      return ans.text?.trim() ? ans.text : "No answer";
+      return ans.text?.trim() ? ans.text : noAnswer;
     case "matching":
       return ans.pairings?.length
         ? ans.pairings.map((p) => `${p.left} → ${p.right}`).join("; ")
-        : "No answer";
+        : noAnswer;
     default:
-      return "No answer";
+      return noAnswer;
   }
 }
 
 function buildResponses(
   questions: QuizQuestion[],
   answers: StoredAnswer[],
+  locale: Locale,
 ): Array<{
   questionId: string;
   text: string;
@@ -83,22 +97,25 @@ function buildResponses(
     const q = qById.get(ans.questionId);
     return {
       questionId: ans.questionId,
-      text: q?.text ?? "Unknown question",
+      text: q?.text ?? serverT(locale, "Common", "Unknown question"),
       kind: q?.kind ?? ans.kind,
       points: q?.points ?? 1,
       correct: ans.correct ?? false,
-      studentAnswer: studentAnswerText(ans, q),
-      correctAnswer: correctAnswerText(q),
+      studentAnswer: studentAnswerText(ans, q, locale),
+      correctAnswer: correctAnswerText(q, locale),
     };
   });
 }
 
-export async function GET(_req: Request, ctx: Ctx) {
+export async function GET(req: Request, ctx: Ctx) {
   await requireTeacher();
   const { id } = await ctx.params;
   if (!isValidObjectId(id)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  const locale: Locale =
+    (new URL(req.url).searchParams.get("lang") as Locale | null) ?? "en";
 
   await dbConnect();
   const quiz = await Quiz.findById(id).lean();
@@ -132,6 +149,7 @@ export async function GET(_req: Request, ctx: Ctx) {
     responses: buildResponses(
       quiz.questions as unknown as QuizQuestion[],
       a.answers as unknown as StoredAnswer[],
+      locale,
     ),
   }));
 

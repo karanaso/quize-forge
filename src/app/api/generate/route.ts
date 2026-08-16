@@ -11,6 +11,7 @@ import {
   draftQuestions,
   type ProgressFn,
 } from "@/lib/ai";
+import { serverT, type Locale } from "@/lib/i18n";
 import { generationRequestSchema, encryptedPayloadSchema, persistedQuestionSchema } from "@/lib/schemas";
 
 const MAX_RANGE_PAGES = 10;
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
   if (!payload.success || !encrypted.success) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
+  const locale: Locale = payload.data.uiLang;
 
   const apiKey = decryptOneTimeKey(
     encrypted.data.requestId,
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
   );
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Invalid or expired encryption key. Please refresh and try again." },
+      { error: serverT(locale, "Generate", "Invalid or expired encryption key. Please refresh and try again.") },
       { status: 401 },
     );
   }
@@ -43,7 +45,7 @@ export async function POST(request: Request) {
   const { pageFrom, pageTo, questionCount, difficulty } = payload.data;
   if (pageFrom > pageTo || pageTo - pageFrom + 1 > MAX_RANGE_PAGES) {
     return NextResponse.json(
-      { error: `Page range must be between 1 and ${MAX_RANGE_PAGES} pages` },
+      { error: serverT(locale, "Generate", "Page range must be between 1 and {max} pages", { max: MAX_RANGE_PAGES }) },
       { status: 400 },
     );
   }
@@ -51,11 +53,14 @@ export async function POST(request: Request) {
   await dbConnect();
   const pdf = await Pdf.findById(payload.data.pdfId);
   if (!pdf) {
-    return NextResponse.json({ error: "PDF not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: serverT(locale, "Generate", "PDF not found") },
+      { status: 404 },
+    );
   }
   if (pageTo > pdf.pageCount) {
     return NextResponse.json(
-      { error: `Page range exceeds PDF (${pdf.pageCount} pages)` },
+      { error: serverT(locale, "Generate", "Page range exceeds PDF ({count} pages)", { count: pdf.pageCount }) },
       { status: 400 },
     );
   }
@@ -73,25 +78,34 @@ export async function POST(request: Request) {
       const progress: ProgressFn = (message) => send("progress", { message });
 
       try {
-        progress(`Loading PDF "${pdf.originalName}"…`);
+        progress(serverT(locale, "Generate", "Loading PDF {name}…", { name: pdf.originalName }));
         const pdfBuffer = await downloadFile(pdf.gridfsId);
 
         const pages = [];
         for (let page = pageFrom; page <= pageTo; page++) {
-          progress(`Reading page ${page - pageFrom + 1} of ${pageTo - pageFrom + 1}…`);
+          progress(
+            serverT(locale, "Generate", "Reading page {page} of {total}…", {
+              page: page - pageFrom + 1,
+              total: pageTo - pageFrom + 1,
+            }),
+          );
           const raster = await rasterizePage(new Uint8Array(pdfBuffer), page);
           pages.push({ pageNumber: page, raster });
         }
 
-        progress("Understanding content and figures…");
-        const digest = await extractDigest(client, pages, progress);
+        const digest = await extractDigest(client, pages, progress, locale);
 
-        progress("Drafting questions…");
-        const drafted = await draftQuestions(client, digest, {
-          questionCount,
-          difficulty,
-          mix: "mc-tf-heavy",
-        });
+        progress(serverT(locale, "Generate", "Drafting questions…"));
+        const drafted = await draftQuestions(
+          client,
+          digest,
+          {
+            questionCount,
+            difficulty,
+            mix: "mc-tf-heavy",
+          },
+          locale,
+        );
 
         const figureByPageLabel = new Map<string, { raster: Buffer }>();
         for (const page of pages) {
@@ -124,7 +138,12 @@ export async function POST(request: Request) {
           delete question.imageRef;
           const parsed = persistedQuestionSchema.safeParse(question);
           if (parsed.success) questions.push(parsed.data);
-          else progress(`Skipped an invalid question: ${parsed.error.issues[0]?.message ?? "schema error"}`);
+          else
+            progress(
+              serverT(locale, "Generate", "Skipped an invalid question: {reason}", {
+                reason: parsed.error.issues[0]?.message ?? "schema error",
+              }),
+            );
         }
 
         const draft = {
@@ -137,7 +156,9 @@ export async function POST(request: Request) {
         controller.close();
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Generation failed";
+          err instanceof Error
+            ? err.message
+            : serverT(locale, "Generate", "Generation failed");
         send("error", { error: message });
         controller.close();
       }

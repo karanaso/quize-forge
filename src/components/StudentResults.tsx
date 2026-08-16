@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useStudentStore } from "@/stores/student";
+import { useI18n } from "@/stores/locale";
 import { QuizImage } from "@/components/QuizImage";
 
 interface GradedAnswer {
@@ -27,12 +28,20 @@ interface AttemptResult {
   stats: Record<string, { correct: number; total: number; percent: number }>;
 }
 
-function answerLabel(g: GradedAnswer): string {
+type TranslateFn = (
+  namespace: string,
+  key: string,
+  vars?: Record<string, string | number>,
+) => string;
+
+function answerLabel(g: GradedAnswer, t: TranslateFn): string {
   switch (g.kind) {
     case "mc":
       return String(g.correctAnswer);
     case "tf":
-      return g.correctAnswer ? "True" : "False";
+      return g.correctAnswer
+        ? t("StudentResults", "True")
+        : t("StudentResults", "False");
     case "fill":
       return Array.isArray(g.correctAnswer)
         ? g.correctAnswer.join(" / ")
@@ -55,6 +64,7 @@ export function StudentResults({
   quizId: string;
   quizTitle: string;
 }) {
+  const { t } = useI18n();
   const { identity } = useStudentStore();
   const [result] = useState<AttemptResult | null>(() => {
     if (typeof window === "undefined") return null;
@@ -86,9 +96,9 @@ export function StudentResults({
   if (!result) {
     return (
       <div className="mx-auto max-w-md space-y-4 rounded-xl border border-zinc-200 bg-white p-6 text-center">
-        <p className="text-zinc-700">No attempt found for this quiz.</p>
+        <p className="text-zinc-700">{t("StudentResults", "No attempt found for this quiz.")}</p>
         <Link href={`/q/${quizId}`} className="text-sm text-indigo-600 hover:underline">
-          Take the quiz
+          {t("StudentResults", "Take the quiz")}
         </Link>
       </div>
     );
@@ -101,7 +111,10 @@ export function StudentResults({
       <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center">
         <h1 className="text-xl font-bold text-zinc-900">{quizTitle}</h1>
         <p className="mt-1 text-sm text-zinc-700">
-          {result.correctCount} of {result.totalQuestions} correct
+          {t("StudentResults", "{count} of {total} correct", {
+            count: result.correctCount,
+            total: result.totalQuestions,
+          })}
         </p>
         <p className="mt-2 text-4xl font-extrabold text-indigo-600">
           {result.score} / {result.totalPoints}
@@ -112,14 +125,14 @@ export function StudentResults({
             href={`/q/${quizId}`}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
           >
-            Retake quiz
+            {t("StudentResults", "Retake quiz")}
           </Link>
           <Link
             href={`/q/${quizId}`}
             onClick={() => sessionStorage.removeItem(`quizforge:result:${quizId}`)}
             className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
           >
-            Back
+            {t("StudentResults", "Back")}
           </Link>
         </div>
       </div>
@@ -148,12 +161,12 @@ export function StudentResults({
                   {g.correct ? `+${g.pointsEarned}` : `0/${g.points}`}
                 </span>
               </div>
-              <QuizImage imageId={g.imageId} alt="figure" className="mt-2" />
+              <QuizImage imageId={g.imageId} alt={t("Common", "figure")} className="mt-2" />
 
               {!g.correct && (
                 <p className="mt-2 text-sm text-zinc-700">
-                  <span className="font-medium">Correct answer: </span>
-                  {answerLabel(g)}
+                  <span className="font-medium">{t("StudentResults", "Correct answer: ")}</span>
+                  {answerLabel(g, t)}
                 </p>
               )}
               {g.explanation && (
@@ -161,8 +174,11 @@ export function StudentResults({
               )}
               {stat && stat.total > 0 && (
                 <p className="mt-2 text-xs text-zinc-700">
-                  {stat.percent}% of other students answered correctly (
-                  {stat.correct}/{stat.total})
+                  {t("StudentResults", "{percent}% of other students answered correctly ({correct}/{total})", {
+                    percent: stat.percent,
+                    correct: stat.correct,
+                    total: stat.total,
+                  })}
                 </p>
               )}
             </div>

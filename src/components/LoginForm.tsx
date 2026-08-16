@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useI18n } from "@/stores/locale";
 
 export function LoginForm() {
   const router = useRouter();
+  const { t } = useI18n();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +24,7 @@ export function LoginForm() {
     setBusy(false);
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      setError(data?.error ?? "Login failed");
+      setError(data?.error ?? t("Common", "Login failed"));
       return;
     }
     router.push("/");
@@ -32,7 +34,7 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4">
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-zinc-700">Username</label>
+        <label className="block text-sm font-medium text-zinc-700">{t("Common", "Username")}</label>
         <input
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -42,7 +44,7 @@ export function LoginForm() {
         />
       </div>
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-zinc-700">Password</label>
+        <label className="block text-sm font-medium text-zinc-700">{t("Common", "Password")}</label>
         <input
           type="password"
           value={password}
@@ -58,7 +60,7 @@ export function LoginForm() {
         disabled={busy}
         className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
       >
-        {busy ? "Signing in…" : "Sign in"}
+        {busy ? t("Common", "Signing in…") : t("Common", "Sign in")}
       </button>
     </form>
   );

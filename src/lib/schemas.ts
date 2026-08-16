@@ -175,6 +175,7 @@ export const generationRequestSchema = z.object({
   timerMinutes: z.number().int().min(1).max(180).default(10),
   shuffleQuestions: z.boolean().default(true),
   shuffleOptions: z.boolean().default(true),
+  uiLang: z.enum(["en", "el"]).default("en"),
 });
 export type GenerationRequest = z.infer<typeof generationRequestSchema>;
 

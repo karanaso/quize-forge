@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { CopiedDrawer } from "@/components/CopiedDrawer";
+import { useI18n } from "@/stores/locale";
 
 interface QuizSummary {
   id: string;
@@ -20,27 +21,29 @@ interface QuizSummary {
 }
 
 export function QuizList() {
+  const { t } = useI18n();
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     const res = await fetch("/api/quiz");
     if (!res.ok) {
-      setError("Failed to load quizzes");
+      setError(t("QuizList", "Failed to load quizzes"));
       setLoading(false);
       return;
     }
     const data = await res.json();
     setQuizzes(data.quizzes);
     setLoading(false);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, []);
+    void load();
+  }, [load]);
 
   async function toggleStatus(id: string) {
     const quiz = quizzes.find((q) => q.id === id);
@@ -56,7 +59,7 @@ export function QuizList() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Delete this quiz permanently?")) return;
+    if (!confirm(t("QuizList", "Delete this quiz permanently?"))) return;
     const res = await fetch(`/api/quiz/${id}`, { method: "DELETE" });
     if (res.ok) await load();
   }
@@ -72,20 +75,20 @@ export function QuizList() {
     setCopiedUrl(url);
   }
 
-  if (loading) return <p className="py-10 text-center text-zinc-700">Loading…</p>;
+  if (loading) return <p className="py-10 text-center text-zinc-700">{t("Common", "Loading…")}</p>;
   if (error) return <p className="py-10 text-center text-red-600">{error}</p>;
 
   if (quizzes.length === 0) {
     return (
       <div className="py-16 text-center">
         <p className="mb-4 text-zinc-700">
-          No quizzes yet. Upload a PDF and let the AI build one for you.
+          {t("QuizList", "No quizzes yet. Upload a PDF and let the AI build one for you.")}
         </p>
         <Link
           href="/create"
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
         >
-          Create your first quiz
+          {t("QuizList", "Create your first quiz")}
         </Link>
       </div>
     );
@@ -112,9 +115,13 @@ export function QuizList() {
               </span>
             </div>
             <p className="mt-0.5 text-sm text-zinc-700">
-              {q.sourceFilename ?? "Imported PDF"} · pages {q.pageFrom}–{q.pageTo} ·{" "}
-              {q.questionCount} questions · {q.timerMinutes} min · {q.difficulty} ·{" "}
-              {q.language}
+              {q.sourceFilename ?? t("QuizList", "Imported PDF")} ·{" "}
+              {t("QuizList", "pages {from}–{to}", { from: q.pageFrom, to: q.pageTo })} ·{" "}
+              {t("QuizList", "{count} questions · {minutes} min", {
+                count: q.questionCount,
+                minutes: q.timerMinutes,
+              })}{" "}
+              · {q.difficulty} · {q.language}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -122,38 +129,40 @@ export function QuizList() {
               href={`/quiz/${q.id}/edit`}
               className="rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50"
             >
-              Edit
+              {t("QuizList", "Edit")}
             </Link>
             <Link
               href={`/quiz/${q.id}/results`}
               className="rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50"
             >
-              Results
+              {t("QuizList", "Results")}
             </Link>
             <Link
               href={`/quiz/${q.id}/print`}
               target="_blank"
               className="rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50"
             >
-              Print
+              {t("QuizList", "Print")}
             </Link>
             <button
               onClick={() => copyLink(q.id)}
               className="rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50"
             >
-              Copy link
+              {t("QuizList", "Copy link")}
             </button>
             <button
               onClick={() => toggleStatus(q.id)}
               className="rounded-lg border border-zinc-300 px-3 py-1.5 hover:bg-zinc-50"
             >
-              {q.status === "published" ? "Unpublish" : "Publish"}
+              {q.status === "published"
+                ? t("QuizList", "Unpublish")
+                : t("QuizList", "Publish")}
             </button>
             <button
               onClick={() => remove(q.id)}
               className="rounded-lg border border-red-200 px-3 py-1.5 text-red-600 hover:bg-red-50"
             >
-              Delete
+              {t("QuizList", "Delete")}
             </button>
           </div>
         </div>

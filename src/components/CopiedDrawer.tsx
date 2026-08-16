@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useI18n } from "@/stores/locale";
 
 const DISMISS_AFTER_MS = 2000;
 
@@ -11,6 +12,7 @@ export function CopiedDrawer({
   url: string;
   onDismiss: () => void;
 }) {
+  const { t } = useI18n();
   useEffect(() => {
     const timer = setTimeout(onDismiss, DISMISS_AFTER_MS);
     return () => clearTimeout(timer);
@@ -27,7 +29,9 @@ export function CopiedDrawer({
           ✅
         </span>
         <div>
-          <p className="text-sm font-semibold text-zinc-900">Copied link</p>
+          <p className="text-sm font-semibold text-zinc-900">
+            {t("Common", "Copied link")}
+          </p>
           <p className="max-w-[60vw] truncate text-xs text-zinc-500">{url}</p>
         </div>
       </div>

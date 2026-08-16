@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import type { Difficulty, Question } from "@/lib/schemas";
 import { questionSchema } from "@/lib/schemas";
+import { serverT, type Locale } from "@/lib/i18n";
 
 export interface PageContent {
   pageNumber: number;
@@ -215,8 +216,9 @@ export async function extractDigest(
   client: OpenAI,
   pages: PageContent[],
   progress: ProgressFn,
+  locale: Locale = "en",
 ): Promise<ContentDigest> {
-  progress("Extracting key concepts and figures…");
+  progress(serverT(locale, "Generate", "Understanding content and figures…"));
   const res = await client.chat.completions.create({
     model: "gpt-4o-mini",
     max_tokens: 3000,
@@ -224,13 +226,7 @@ export async function extractDigest(
     messages: [
       {
         role: "system",
-        content:
-          "You are reading pages of an educational book (text plus figures/diagrams). " +
-          "Extract ONLY what is actually printed on these pages — do not add any outside knowledge. " +
-          "List every important fact, definition, formula, example, term and number exactly as it appears in the book, " +
-          "each as a key concept that includes its exact page number, e.g. \"C = 2\u03c0r is the circumference formula (p. 4)\". " +
-          "Also produce a catalog of the figures on each page with their normalized bounding boxes " +
-          "(x/y/width/height in 0-1 coordinates relative to the page).",
+        content: serverT(locale, "Ai", "digestSystem"),
       },
       {
         role: "user",
@@ -240,7 +236,7 @@ export async function extractDigest(
   });
 
   const raw = res.choices[0]?.message?.content;
-  if (!raw) throw new Error("Model returned no digest.");
+  if (!raw) throw new Error(serverT(locale, "Generate", "Model returned no digest."));
   return JSON.parse(raw) as ContentDigest;
 }
 
@@ -256,11 +252,12 @@ export async function draftQuestions(
     difficulty: Difficulty;
     mix: "balanced" | "mc-tf-heavy";
   },
+  locale: Locale = "en",
 ): Promise<DraftQuestion[]> {
   const mixInstruction =
     opts.mix === "mc-tf-heavy"
-      ? "Make roughly 80% multiple-choice and true/false questions; the remainder can be fill-in-the-blank or matching."
-      : "Balance multiple-choice, true/false, fill-in-the-blank and matching questions evenly.";
+      ? serverT(locale, "Ai", "questionsSystem4McTf")
+      : serverT(locale, "Ai", "questionsSystem4Balanced");
 
   const res = await client.chat.completions.create({
     model: "gpt-4o-mini",
@@ -270,38 +267,31 @@ export async function draftQuestions(
       {
         role: "system",
         content: [
-          "You are a teacher writing a quiz that tests ONLY the material in the provided book pages. ",
-          "Write the questions in this language: ",
+          serverT(locale, "Ai", "questionsSystem1"),
+          serverT(locale, "Ai", "questionsSystem2"),
           digest.language,
-          ".",
-          "Question difficulty:", opts.difficulty,
-          ". ",
+          serverT(locale, "Ai", "questionsSystem3"), opts.difficulty, ".",
           mixInstruction,
-          "",
-          "Every question must be directly and exclusively answerable from the supplied pages. ",
-          "Never invent facts, formulas, dates, examples or numbers that are not in the book. ",
-          "Use the book's own terminology, definitions, formulas and examples. ",
-          "In each explanation, name the specific concept from the book and include its page number, ",
-          'e.g. "From p. 4: the circumference formula C = 2\u03c0r.". ',
-          "When a question depends on a figure/diagram, set imageRef to match a figure label from the digest exactly.",
+          serverT(locale, "Ai", "questionsSystem5"),
         ].join(" "),
       },
       {
         role: "user",
         content:
-          `Book topic: ${digest.topic}\nSummary: ${digest.summary}\n` +
-          `Key concepts (facts from the book, with page numbers):\n- ${digest.keyConcepts.join("\n- ")}\n` +
-          `Figures:\n${digest.figures
-            .map((f) => `- page ${f.page}: "${f.label}" bbox=${JSON.stringify(f.bbox)}`)
-            .join("\n")}\n` +
-          `\nGenerate exactly ${opts.questionCount} questions, each grounded in a concrete fact, formula, definition or example from the pages above. ` +
-          `Fill-in-the-blank: put "____" in the text where the blank is.`,
+          serverT(locale, "Ai", "userTopicSummary", { topic: digest.topic, summary: digest.summary }) +
+          serverT(locale, "Ai", "userKeyConcepts", { concepts: digest.keyConcepts.join("\n- ") }) +
+          serverT(locale, "Ai", "userFigures", {
+            figures: digest.figures
+              .map((f) => `- page ${f.page}: "${f.label}" bbox=${JSON.stringify(f.bbox)}`)
+              .join("\n"),
+          }) +
+          serverT(locale, "Ai", "userGenerate", { count: opts.questionCount }),
       },
     ],
   });
 
   const raw = res.choices[0]?.message?.content;
-  if (!raw) throw new Error("Model returned no questions.");
+  if (!raw) throw new Error(serverT(locale, "Generate", "Model returned no questions."));
 
   const parsed = JSON.parse(raw) as { questions: DraftQuestion[] };
   const validated = parsed.questions.map((q) => ({

@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useGeneratorStore, type DraftQuiz } from "@/stores/generator";
+import { useI18n } from "@/stores/locale";
 import { encryptWithOneTimeKey } from "@/lib/client-crypto";
 
 export function CreateWizard() {
   const router = useRouter();
   const store = useGeneratorStore();
+  const { t, locale } = useI18n();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export function CreateWizard() {
     setUploading(false);
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      setUploadError(data?.error ?? "Upload failed");
+      setUploadError(data?.error ?? t("Common", "Upload failed"));
       return;
     }
     const data = await res.json();
@@ -34,7 +36,7 @@ export function CreateWizard() {
   async function generate() {
     if (!store.pdf || store.pageFrom == null || store.pageTo == null) return;
     if (!store.apiKey.trim()) {
-      store.setError("Enter your OpenAI API key to generate.");
+      store.setError(t("CreateWizard", "Enter your OpenAI API key to generate."));
       return;
     }
     store.setBusy(true);
@@ -61,13 +63,14 @@ export function CreateWizard() {
             timerMinutes: store.config.timerMinutes,
             shuffleQuestions: store.config.shuffleQuestions,
             shuffleOptions: store.config.shuffleOptions,
+            uiLang: locale,
           },
         }),
       });
 
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.error ?? "Generation failed");
+        throw new Error(data?.error ?? t("Common", "Generation failed"));
       }
 
       await consumeStream(res.body, (event, data) => {
@@ -83,7 +86,7 @@ export function CreateWizard() {
         }
       });
     } catch (err) {
-      store.setError(err instanceof Error ? err.message : "Generation failed");
+      store.setError(err instanceof Error ? err.message : t("Common", "Generation failed"));
       store.setBusy(false);
     }
   }
@@ -108,7 +111,7 @@ export function CreateWizard() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      store.setError(data?.error ?? "Save failed");
+      store.setError(data?.error ?? t("Common", "Save failed"));
       return;
     }
     const { id } = await res.json();
@@ -124,7 +127,12 @@ export function CreateWizard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-sm text-zinc-700">
-        {(["1. Upload", "2. Configure", "3. Generate", "4. Review"] as const).map(
+        {([
+          t("CreateWizard", "1. Upload"),
+          t("CreateWizard", "2. Configure"),
+          t("CreateWizard", "3. Generate"),
+          t("CreateWizard", "4. Review"),
+        ] as const).map(
           (label, i) => (
             <div key={label} className="flex items-center gap-2">
               <span
@@ -150,19 +158,19 @@ export function CreateWizard() {
             onChange={(e) => onFile(e.target.files?.[0] ?? null)}
             className="mx-auto block w-full max-w-md text-sm text-zinc-700 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-indigo-700"
           />
-          {uploading && <p className="text-sm text-zinc-700">Uploading…</p>}
+          {uploading && <p className="text-sm text-zinc-700">{t("CreateWizard", "Uploading…")}</p>}
           {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
           <p className="text-xs text-zinc-400">
-            PDF up to 20 pages, 50 MB. You&apos;ll pick a 1–10 page range next.
+            {t("CreateWizard", "PDF up to 20 pages, 50 MB. You'll pick a 1–10 page range next.")}
           </p>
 
           {store.pdf && (
             <div className="mx-auto max-w-md rounded-lg bg-zinc-50 p-4 text-left text-sm">
               <p className="font-medium text-zinc-800">{store.pdf.filename}</p>
-              <p className="text-zinc-700">{store.pdf.pageCount} pages</p>
+              <p className="text-zinc-700">{t("CreateWizard", "{count} pages", { count: store.pdf.pageCount })}</p>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="text-xs font-medium text-zinc-700">From page</span>
+                  <span className="text-xs font-medium text-zinc-700">{t("CreateWizard", "From page")}</span>
                   <input
                     type="number"
                     min={1}
@@ -176,7 +184,7 @@ export function CreateWizard() {
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-medium text-zinc-700">To page</span>
+                  <span className="text-xs font-medium text-zinc-700">{t("CreateWizard", "To page")}</span>
                   <input
                     type="number"
                     min={1}
@@ -194,7 +202,7 @@ export function CreateWizard() {
                 store.pageTo != null &&
                 store.pageTo - store.pageFrom + 1 > 10 && (
                   <p className="mt-2 text-xs text-red-600">
-                    Range too large — maximum 10 pages.
+                    {t("CreateWizard", "Range too large — maximum 10 pages.")}
                   </p>
                 )}
               <div className="mt-4 flex gap-2">
@@ -208,7 +216,7 @@ export function CreateWizard() {
                   onClick={() => setStep(2)}
                   className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40"
                 >
-                  Next
+                  {t("Common", "Next")}
                 </button>
                 <button
                   onClick={() => {
@@ -216,7 +224,7 @@ export function CreateWizard() {
                   }}
                   className="rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50"
                 >
-                  Upload a different file
+                  {t("CreateWizard", "Upload a different file")}
                 </button>
               </div>
             </div>
@@ -228,7 +236,7 @@ export function CreateWizard() {
         <div className="space-y-5 rounded-xl border border-zinc-200 bg-white p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="text-sm font-medium text-zinc-700">Number of questions</span>
+              <span className="text-sm font-medium text-zinc-700">{t("CreateWizard", "Number of questions")}</span>
               <input
                 type="number"
                 min={1}
@@ -239,19 +247,19 @@ export function CreateWizard() {
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-zinc-700">Difficulty</span>
+              <span className="text-sm font-medium text-zinc-700">{t("CreateWizard", "Difficulty")}</span>
               <select
                 value={store.difficulty}
                 onChange={(e) => store.setDifficulty(e.target.value as never)}
                 className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               >
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
+                <option value="easy">{t("CreateWizard", "Easy")}</option>
+                <option value="medium">{t("CreateWizard", "Medium")}</option>
+                <option value="hard">{t("CreateWizard", "Hard")}</option>
               </select>
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-zinc-700">Timer (minutes)</span>
+              <span className="text-sm font-medium text-zinc-700">{t("CreateWizard", "Timer (minutes)")}</span>
               <input
                 type="number"
                 min={1}
@@ -264,7 +272,7 @@ export function CreateWizard() {
               />
             </label>
             <label className="block">
-              <span className="text-sm font-medium text-zinc-700">OpenAI API key</span>
+              <span className="text-sm font-medium text-zinc-700">{t("CreateWizard", "OpenAI API key")}</span>
               <input
                 type="password"
                 value={store.apiKey}
@@ -273,7 +281,7 @@ export function CreateWizard() {
                 className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
               />
               <span className="text-xs text-zinc-400">
-                Encrypted and used only for this generation — never stored.
+                {t("CreateWizard", "Encrypted and used only for this generation — never stored.")}
               </span>
             </label>
           </div>
@@ -286,7 +294,7 @@ export function CreateWizard() {
                 onChange={(e) => store.setConfig({ shuffleQuestions: e.target.checked })}
                 className="h-4 w-4"
               />
-              Shuffle questions
+              {t("CreateWizard", "Shuffle questions")}
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -295,7 +303,7 @@ export function CreateWizard() {
                 onChange={(e) => store.setConfig({ shuffleOptions: e.target.checked })}
                 className="h-4 w-4"
               />
-              Shuffle options
+              {t("CreateWizard", "Shuffle options")}
             </label>
           </div>
 
@@ -305,13 +313,13 @@ export function CreateWizard() {
               disabled={!store.apiKey.trim()}
               className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40"
             >
-              Generate quiz
+              {t("CreateWizard", "Generate quiz")}
             </button>
             <button
               onClick={() => setStep(1)}
               className="rounded-lg border border-zinc-300 px-4 py-2 text-sm hover:bg-zinc-50"
             >
-              Back
+              {t("Common", "Back")}
             </button>
           </div>
         </div>
@@ -321,10 +329,10 @@ export function CreateWizard() {
         <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-8 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
           <p className="text-sm text-zinc-700">
-            {store.progress ?? "Preparing…"}
+            {store.progress ?? t("CreateWizard", "Preparing…")}
           </p>
           <p className="text-xs text-zinc-400">
-            Reading up to 10 pages with images; this can take 30–60 seconds.
+            {t("CreateWizard", "Reading up to 10 pages with images; this can take 30–60 seconds.")}
           </p>
         </div>
       )}
@@ -332,9 +340,10 @@ export function CreateWizard() {
       {step === 4 && store.draft && (
         <div className="space-y-4">
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-            Quiz drafted successfully —{" "}
-            <strong>{store.draft.questions.length} questions</strong> in{" "}
-            <strong>{store.draft.language}</strong>.
+            {t("CreateWizard", "Quiz drafted successfully — {count} questions in {language}.", {
+              count: store.draft.questions.length,
+              language: store.draft.language,
+            })}
           </div>
           {store.error && (
             <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -346,29 +355,28 @@ export function CreateWizard() {
               onClick={() => save("draft")}
               className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
             >
-              Save draft & review questions
+              {t("CreateWizard", "Save draft & review questions")}
             </button>
             <button
               onClick={() => save("published")}
               className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
             >
-              Review later — publish now
+              {t("CreateWizard", "Review later — publish now")}
             </button>
           </div>
           <p className="text-xs text-zinc-400">
-            Questions were generated from the full page range. Use the editor to fix
-            answer keys, reorder, or remove questions before publishing.
+            {t("CreateWizard", "Questions were generated from the full page range. Use the editor to fix answer keys, reorder, or remove questions before publishing.")}
           </p>
         </div>
       )}
       {step === 4 && !store.draft && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {store.error ?? "Something went wrong during generation."}
+          {store.error ?? t("CreateWizard", "Something went wrong during generation.")}
         </div>
       )}
       {step === 4 && !store.draft && (
         <Link href="/" className="text-sm text-indigo-600 hover:underline">
-          Back to dashboard
+          {t("CreateWizard", "Back to dashboard")}
         </Link>
       )}
     </div>
