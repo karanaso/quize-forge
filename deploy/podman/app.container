@@ -1,0 +1,18 @@
+[Unit]
+Description=QuizForge App
+After=network-online.target quizforge-mongo.service
+Wants=network-online.target
+Requires=quizforge-mongo.service
+
+[Container]
+Image=quizforge:local
+ContainerName=quizforge-app
+Network=quizforge-net
+PublishPort=3000:3000
+EnvironmentFile=/etc/quizforge/app.env
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

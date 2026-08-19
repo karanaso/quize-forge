@@ -1,0 +1,16 @@
+[Unit]
+Description=QuizForge MongoDB
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/library/mongo:8
+ContainerName=quizforge-mongo
+Network=quizforge-net
+Volume=quizforge-mongodb:/data/db
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
