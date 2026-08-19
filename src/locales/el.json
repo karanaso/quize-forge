@@ -29,7 +29,8 @@
     "Matching": "Αντιστοίχιση",
     "No answer": "Δεν υπάρχει απάντηση",
     "Unknown question": "Άγνωστη ερώτηση",
-    "Option {index}": "Επιλογή {index}"
+    "Option {index}": "Επιλογή {index}",
+    "Invalid YouTube URL": "Μη έγκυρος σύνδεσμος YouTube"
   },
   "NavBar": {
     "+ New quiz": "+ Νέο κουίζ"
@@ -100,7 +101,8 @@
     "New question": "Νέα ερώτηση",
     "{points} pt": "{points} μ.",
     "Delete": "Διαγραφή",
-    "+ Add question": "+ Προσθήκη ερώτησης"
+    "+ Add question": "+ Προσθήκη ερώτησης",
+    "YouTube video URL (optional)": "Σύνδεσμος βίντεο YouTube (προαιρετικό)"
   },
   "QuestionEditor": {
     "Question text": "Κείμενο ερώτησης",
@@ -149,7 +151,8 @@
     "Could not submit — please try again.": "Δεν ήταν δυνατή η υποβολή — δοκιμάστε ξανά.",
     "Unmute sounds": "Ενεργοποίηση ήχου",
     "Mute sounds": "Σίγαση ήχων",
-    "{points} pts": "{points} πόντοι"
+    "{points} pts": "{points} πόντοι",
+    "Instructional video": "Βίντεο οδηγιών"
   },
   "StudentResults": {
     "No attempt found for this quiz.": "Δεν βρέθηκε προσπάθεια για αυτό το κουίζ.",

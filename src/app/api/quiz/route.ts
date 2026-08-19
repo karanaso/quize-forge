@@ -3,12 +3,13 @@ import { z } from "zod";
 import { Quiz } from "@/lib/models/quiz";
 import { dbConnect } from "@/lib/db";
 import { requireTeacher } from "@/lib/auth";
-import { persistedQuestionSchema, quizConfigSchema, difficultySchema } from "@/lib/schemas";
+import { persistedQuestionSchema, quizConfigSchema, difficultySchema, videoUrlSchema } from "@/lib/schemas";
 
 export const runtime = "nodejs";
 
 const createQuizSchema = z.object({
   title: z.string().min(1).max(200),
+  videoUrl: videoUrlSchema,
   pdfId: z.string().optional(),
   sourceFilename: z.string().optional(),
   pageFrom: z.number().int().min(1),

@@ -5,6 +5,7 @@ import type { PersistedQuestion } from "@/lib/schemas";
 export interface PublicQuizPayload {
   id: string;
   title: string;
+  videoUrl?: string;
   questions: {
     id: string;
     points: number;
@@ -55,6 +56,7 @@ export async function getPublicQuiz(id: string): Promise<PublicQuizPayload | nul
   return {
     id: doc._id.toString(),
     title: doc.title,
+    videoUrl: doc.videoUrl,
     questions,
     config: doc.config,
   };

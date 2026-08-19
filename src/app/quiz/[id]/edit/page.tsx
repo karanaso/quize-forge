@@ -34,6 +34,7 @@ export default async function EditPage({
           initialTitle={doc.title}
           initialQuestions={questions as never}
           initialStatus={doc.status}
+          initialVideoUrl={doc.videoUrl}
         />
       </main>
     </>

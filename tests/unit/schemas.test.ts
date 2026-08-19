@@ -10,6 +10,8 @@ import {
   attemptSchema,
   generationRequestSchema,
   encryptedPayloadSchema,
+  videoUrlSchema,
+  quizSchema,
 } from "@/lib/schemas";
 
 describe("question schemas", () => {
@@ -194,5 +196,51 @@ describe("encryptedPayloadSchema", () => {
       iv: "iv",
     }).success).toBe(true);
     expect(encryptedPayloadSchema.safeParse({ ciphertext: "c" }).success).toBe(false);
+  });
+});
+
+describe("videoUrlSchema", () => {
+  it("accepts a valid watch URL", () => {
+    expect(
+      videoUrlSchema.safeParse("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        .success,
+    ).toBe(true);
+  });
+
+  it("accepts a youtu.be short link", () => {
+    expect(videoUrlSchema.safeParse("https://youtu.be/dQw4w9WgXcQ").success).toBe(
+      true,
+    );
+  });
+
+  it("rejects a non-YouTube URL", () => {
+    expect(videoUrlSchema.safeParse("https://vimeo.com/12345").success).toBe(false);
+    expect(videoUrlSchema.safeParse("not a url").success).toBe(false);
+  });
+
+  it("allows an empty value", () => {
+    expect(videoUrlSchema.safeParse(undefined).success).toBe(true);
+    expect(videoUrlSchema.safeParse("").success).toBe(true);
+  });
+});
+
+describe("quizSchema videoUrl", () => {
+  it("accepts a valid videoUrl on a quiz", () => {
+    expect(
+      quizSchema.safeParse({
+        _id: "64f000000000000000000000",
+        title: "Quiz",
+        pageFrom: 1,
+        pageTo: 1,
+        difficulty: "medium",
+        language: "English",
+        questions: [],
+        config: { timerMinutes: 10, shuffleQuestions: true, shuffleOptions: true },
+        status: "published",
+        videoUrl: "https://youtu.be/dQw4w9WgXcQ",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).success,
+    ).toBe(true);
   });
 });

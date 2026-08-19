@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Quiz } from "@/lib/models/quiz";
 import { dbConnect, isValidObjectId } from "@/lib/db";
 import { requireTeacher } from "@/lib/auth";
-import { persistedQuestionSchema, quizConfigSchema } from "@/lib/schemas";
+import { persistedQuestionSchema, quizConfigSchema, videoUrlSchema } from "@/lib/schemas";
 
 export const runtime = "nodejs";
 
@@ -26,6 +26,7 @@ export async function GET(_req: Request, ctx: Ctx) {
 
 const updateQuizSchema = z.object({
   title: z.string().min(1).max(200).optional(),
+  videoUrl: videoUrlSchema,
   questions: z.array(persistedQuestionSchema).min(1).optional(),
   config: quizConfigSchema.optional(),
   status: z.enum(["draft", "published"]).optional(),
@@ -45,7 +46,15 @@ export async function PUT(request: Request, ctx: Ctx) {
       { status: 400 },
     );
   }
-  await Quiz.updateOne({ _id: doc._id }, { $set: body.data });
+  const set = { ...body.data };
+  if (set.videoUrl === "") delete set.videoUrl;
+  await Quiz.updateOne(
+    { _id: doc._id },
+    {
+      ...(Object.keys(set).length > 0 ? { $set: set } : {}),
+      ...(body.data.videoUrl === "" ? { $unset: { videoUrl: "" } } : {}),
+    },
+  );
   return NextResponse.json({ ok: true });
 }
 

@@ -29,7 +29,8 @@
     "Matching": "Matching",
     "No answer": "No answer",
     "Unknown question": "Unknown question",
-    "Option {index}": "Option {index}"
+    "Option {index}": "Option {index}",
+    "Invalid YouTube URL": "Invalid YouTube URL"
   },
   "NavBar": {
     "+ New quiz": "+ New quiz"
@@ -100,7 +101,8 @@
     "New question": "New question",
     "{points} pt": "{points} pt",
     "Delete": "Delete",
-    "+ Add question": "+ Add question"
+    "+ Add question": "+ Add question",
+    "YouTube video URL (optional)": "YouTube video URL (optional)"
   },
   "QuestionEditor": {
     "Question text": "Question text",
@@ -149,7 +151,8 @@
     "Could not submit — please try again.": "Could not submit — please try again.",
     "Unmute sounds": "Unmute sounds",
     "Mute sounds": "Mute sounds",
-    "{points} pts": "{points} pts"
+    "{points} pts": "{points} pts",
+    "Instructional video": "Instructional video"
   },
   "StudentResults": {
     "No attempt found for this quiz.": "No attempt found for this quiz.",

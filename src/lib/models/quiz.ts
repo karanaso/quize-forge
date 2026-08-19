@@ -30,6 +30,7 @@ const quizSchema = new Schema(
   {
     title: { type: String, required: true },
     ownerId: { type: String, required: false, index: true },
+    videoUrl: { type: String, required: false },
     pdfId: { type: Schema.Types.ObjectId, required: false },
     sourceFilename: { type: String, required: false },
     pageFrom: { type: Number, required: true },
@@ -60,6 +61,7 @@ export interface QuizDoc {
   _id: Types.ObjectId;
   title: string;
   ownerId?: string;
+  videoUrl?: string;
   pdfId?: Types.ObjectId;
   sourceFilename?: string;
   pageFrom: number;

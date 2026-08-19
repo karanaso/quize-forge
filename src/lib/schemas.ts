@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { youtubeUrlToEmbed } from "@/lib/youtube";
 
 export const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 export const QUESTION_TYPES = ["mc", "tf", "fill", "matching"] as const;
@@ -84,6 +85,14 @@ export type PersistedQuestion = z.infer<typeof persistedQuestionSchema>;
 
 // ---------- Quiz ----------
 
+/** Optional YouTube URL. Strict: only watch?v= / youtu.be links pass. */
+export const videoUrlSchema = z
+  .string()
+  .optional()
+  .refine((v) => !v || youtubeUrlToEmbed(v) !== null, {
+    message: "Invalid YouTube URL",
+  });
+
 export const quizConfigSchema = z.object({
   timerMinutes: z.number().int().min(1).max(180).default(10),
   shuffleQuestions: z.boolean().default(true),
@@ -94,6 +103,7 @@ export type QuizConfig = z.infer<typeof quizConfigSchema>;
 export const quizSchema = z.object({
   _id: z.string(),
   title: z.string().min(1),
+  videoUrl: z.string().optional(),
   pdfId: z.string().optional(),
   sourceFilename: z.string().optional(),
   pageFrom: z.number().int().min(1),

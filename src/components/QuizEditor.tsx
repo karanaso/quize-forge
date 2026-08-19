@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEditorStore } from "@/stores/editor";
 import { useI18n } from "@/stores/locale";
+import { youtubeUrlToEmbed } from "@/lib/youtube";
 import { QuestionEditor } from "@/components/QuestionEditor";
 import { QuizImage } from "@/components/QuizImage";
 import type { PersistedQuestion } from "@/lib/schemas";
@@ -20,11 +21,13 @@ export function QuizEditor({
   initialTitle,
   initialQuestions,
   initialStatus,
+  initialVideoUrl = "",
 }: {
   quizId: string;
   initialTitle: string;
   initialQuestions: PersistedQuestion[];
   initialStatus: "draft" | "published";
+  initialVideoUrl?: string;
 }) {
   const router = useRouter();
   const store = useEditorStore();
@@ -34,11 +37,16 @@ export function QuizEditor({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    store.load(quizId, initialTitle, initialQuestions);
+    store.load(quizId, initialTitle, initialVideoUrl, initialQuestions);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quizId]);
 
   async function save() {
+    const videoUrl = store.videoUrl.trim();
+    if (videoUrl && youtubeUrlToEmbed(videoUrl) === null) {
+      setError(t("Common", "Invalid YouTube URL"));
+      return;
+    }
     setSaving(true);
     setError(null);
     const res = await fetch(`/api/quiz/${store.quizId}`, {
@@ -46,6 +54,7 @@ export function QuizEditor({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: store.title,
+        videoUrl,
         questions: store.questions,
       }),
     });
@@ -125,6 +134,17 @@ export function QuizEditor({
             : t("QuizEditor", "Publish")}
         </button>
       </div>
+      <label className="block">
+        <span className="text-xs font-medium text-zinc-700">
+          {t("QuizEditor", "YouTube video URL (optional)")}
+        </span>
+        <input
+          value={store.videoUrl}
+          onChange={(e) => store.setVideoUrl(e.target.value)}
+          placeholder="https://www.youtube.com/watch?v=…"
+          className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+        />
+      </label>
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="space-y-3">

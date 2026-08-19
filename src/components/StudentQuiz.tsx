@@ -6,6 +6,7 @@ import { useStudentStore } from "@/stores/student";
 import { useI18n } from "@/stores/locale";
 import { LangToggle } from "@/components/LangToggle";
 import { QuizImage } from "@/components/QuizImage";
+import { youtubeUrlToEmbed } from "@/lib/youtube";
 import type { StudentIdentity } from "@/lib/schemas";
 
 export interface PublicQuestion {
@@ -23,6 +24,7 @@ export interface PublicQuestion {
 export interface PublicQuiz {
   id: string;
   title: string;
+  videoUrl?: string;
   questions: PublicQuestion[];
   config: {
     timerMinutes: number;
@@ -428,6 +430,25 @@ function QuizRunner({
           </button>
         </div>
       </div>
+
+      {quiz.videoUrl && (() => {
+        const embedUrl = youtubeUrlToEmbed(quiz.videoUrl);
+        if (!embedUrl) return null;
+        return (
+          <div className="quiz-pop-in overflow-hidden rounded-2xl border border-white/60 bg-white/85 p-2 shadow-lg shadow-indigo-100 backdrop-blur">
+            <div className="aspect-video w-full">
+              <iframe
+                src={embedUrl}
+                title={t("StudentQuiz", "Instructional video")}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+                className="h-full w-full"
+              />
+            </div>
+          </div>
+        );
+      })()}
 
       {orderedQuestions.map((q, idx) => (
         <div

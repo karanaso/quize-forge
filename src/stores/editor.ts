@@ -6,11 +6,18 @@ import type { PersistedQuestion } from "@/lib/schemas";
 interface EditorState {
   quizId: string | null;
   title: string;
+  videoUrl: string;
   questions: PersistedQuestion[];
   dirty: boolean;
 
-  load: (quizId: string, title: string, questions: PersistedQuestion[]) => void;
+  load: (
+    quizId: string,
+    title: string,
+    videoUrl: string,
+    questions: PersistedQuestion[],
+  ) => void;
   setTitle: (title: string) => void;
+  setVideoUrl: (videoUrl: string) => void;
   updateQuestion: (id: string, patch: Partial<PersistedQuestion>) => void;
   addQuestion: (q: PersistedQuestion) => void;
   deleteQuestion: (id: string) => void;
@@ -22,11 +29,14 @@ interface EditorState {
 export const useEditorStore = create<EditorState>((set) => ({
   quizId: null,
   title: "",
+  videoUrl: "",
   questions: [],
   dirty: false,
 
-  load: (quizId, title, questions) => set({ quizId, title, questions, dirty: false }),
+  load: (quizId, title, videoUrl, questions) =>
+    set({ quizId, title, videoUrl, questions, dirty: false }),
   setTitle: (title) => set({ title, dirty: true }),
+  setVideoUrl: (videoUrl) => set({ videoUrl, dirty: true }),
   updateQuestion: (id, patch) =>
     set((s) => ({
       questions: s.questions.map((q) =>
@@ -48,5 +58,6 @@ export const useEditorStore = create<EditorState>((set) => ({
       return { questions, dirty: true };
     }),
   markSaved: () => set({ dirty: false }),
-  reset: () => set({ quizId: null, title: "", questions: [], dirty: false }),
+  reset: () =>
+    set({ quizId: null, title: "", videoUrl: "", questions: [], dirty: false }),
 }));

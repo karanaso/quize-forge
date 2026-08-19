@@ -142,3 +142,53 @@ describe("quiz CRUD", () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe("quiz video URL", () => {
+  it("accepts a valid videoUrl and exposes it in the public payload", async () => {
+    const { client, quizId } = await uploadPdfAndCreateQuiz();
+
+    const update = await client.req(`/api/quiz/${quizId}`, {
+      method: "PUT",
+      body: { videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    });
+    expect(update.status).toBe(200);
+
+    await client.req(`/api/quiz/${quizId}`, {
+      method: "PUT",
+      body: { status: "published" },
+    });
+
+    const pub = await fetch(`${BASE_URL}/api/quiz/${quizId}/public`);
+    expect(pub.status).toBe(200);
+    const body = (await pub.json()) as { quiz: { videoUrl?: string } };
+    expect(body.quiz.videoUrl).toBe("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+  });
+
+  it("rejects an invalid videoUrl with 400", async () => {
+    const { client, quizId } = await uploadPdfAndCreateQuiz();
+    const res = await client.req(`/api/quiz/${quizId}`, {
+      method: "PUT",
+      body: { videoUrl: "https://vimeo.com/12345" },
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("clears the videoUrl when an empty value is saved", async () => {
+    const { client, quizId } = await uploadPdfAndCreateQuiz();
+
+    await client.req(`/api/quiz/${quizId}`, {
+      method: "PUT",
+      body: { videoUrl: "https://youtu.be/dQw4w9WgXcQ" },
+    });
+    const clear = await client.req(`/api/quiz/${quizId}`, {
+      method: "PUT",
+      body: { videoUrl: "" },
+    });
+    expect(clear.status).toBe(200);
+
+    const single = await client.req(`/api/quiz/${quizId}`);
+    expect(single.status).toBe(200);
+    const { quiz } = (await single.json()) as { quiz: { videoUrl?: string } };
+    expect(quiz.videoUrl).toBeUndefined();
+  });
+});
