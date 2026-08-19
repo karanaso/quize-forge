@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isAuthorized } from "@/lib/auth";
+import { deriveUserId, isAuthorized } from "@/lib/auth";
 
 beforeEach(() => {
   vi.stubEnv("TEACHER_USERNAME", "teacher");
@@ -29,6 +29,20 @@ describe("isAuthorized", () => {
     vi.stubEnv("TEACHER_USERNAME", "");
     vi.stubEnv("TEACHER_PASSWORD", "");
     expect(isAuthorized("teacher", "s3cret")).toBe(false);
+  });
+});
+
+describe("deriveUserId", () => {
+  it("is deterministic for the same username", () => {
+    expect(deriveUserId("teacher")).toBe(deriveUserId("teacher"));
+  });
+
+  it("produces a stable 64-char hex digest", () => {
+    expect(deriveUserId("teacher")).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("differs between usernames", () => {
+    expect(deriveUserId("teacher")).not.toBe(deriveUserId("admin"));
   });
 });
 

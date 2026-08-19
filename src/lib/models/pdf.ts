@@ -3,6 +3,7 @@ import { Schema, model, models, type Types } from "mongoose";
 const pdfSchema = new Schema(
   {
     filename: { type: String, required: true },
+    ownerId: { type: String, required: false, index: true },
     originalName: { type: String, required: true },
     pageCount: { type: Number, required: true },
     size: { type: Number, required: true },
@@ -18,6 +19,7 @@ const pdfSchema = new Schema(
 export interface PdfDoc {
   _id: Types.ObjectId;
   filename: string;
+  ownerId?: string;
   originalName: string;
   pageCount: number;
   size: number;

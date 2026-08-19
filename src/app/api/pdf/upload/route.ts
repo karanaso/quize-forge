@@ -12,7 +12,7 @@ export const MAX_UPLOAD_PAGES = 20;
 export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  await requireTeacher();
+  const session = await requireTeacher();
 
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.includes("multipart/form-data")) {
@@ -52,6 +52,7 @@ export async function POST(request: Request) {
   const gridfsId = await uploadPdf(filename, file.name, bytes);
   const doc = await Pdf.create({
     filename,
+    ownerId: session.userId,
     originalName: file.name,
     pageCount,
     size: bytes.length,

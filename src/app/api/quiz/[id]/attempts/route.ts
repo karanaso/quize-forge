@@ -108,7 +108,7 @@ function buildResponses(
 }
 
 export async function GET(req: Request, ctx: Ctx) {
-  await requireTeacher();
+  const session = await requireTeacher();
   const { id } = await ctx.params;
   if (!isValidObjectId(id)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -118,7 +118,7 @@ export async function GET(req: Request, ctx: Ctx) {
     (new URL(req.url).searchParams.get("lang") as Locale | null) ?? "en";
 
   await dbConnect();
-  const quiz = await Quiz.findById(id).lean();
+  const quiz = await Quiz.findOne({ _id: id, ownerId: session.userId }).lean();
   if (!quiz) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const attempts = (await Attempt.find({ quizId: quiz._id })

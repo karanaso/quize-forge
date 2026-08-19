@@ -94,12 +94,12 @@ export default async function PrintPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireTeacher();
+  const session = await requireTeacher();
   const { id } = await params;
   if (!isValidObjectId(id)) notFound();
 
   await dbConnect();
-  const doc = await Quiz.findById(id).lean();
+  const doc = await Quiz.findOne({ _id: id, ownerId: session.userId }).lean();
   if (!doc) notFound();
 
   const questions = (doc.questions ?? []) as unknown as PersistedQuestion[];

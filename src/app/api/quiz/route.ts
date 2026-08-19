@@ -21,7 +21,7 @@ const createQuizSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  await requireTeacher();
+  const session = await requireTeacher();
   const body = createQuizSchema.safeParse(await request.json());
   if (!body.success) {
     return NextResponse.json(
@@ -31,14 +31,14 @@ export async function POST(request: Request) {
   }
 
   await dbConnect();
-  const doc = await Quiz.create(body.data);
+  const doc = await Quiz.create({ ...body.data, ownerId: session.userId });
   return NextResponse.json({ id: doc._id.toString() }, { status: 201 });
 }
 
 export async function GET() {
-  await requireTeacher();
+  const session = await requireTeacher();
   await dbConnect();
-  const docs = await Quiz.find()
+  const docs = await Quiz.find({ ownerId: session.userId })
     .sort({ updatedAt: -1 })
     .lean();
 

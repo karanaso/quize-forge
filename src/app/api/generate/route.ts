@@ -20,7 +20,7 @@ export const maxDuration = 300;
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  await requireTeacher();
+  const session = await requireTeacher();
 
   const body = await request.json().catch(() => null);
   const payload = generationRequestSchema.safeParse(body?.payload);
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   }
 
   await dbConnect();
-  const pdf = await Pdf.findById(payload.data.pdfId);
+  const pdf = await Pdf.findOne({ _id: payload.data.pdfId, ownerId: session.userId });
   if (!pdf) {
     return NextResponse.json(
       { error: serverT(locale, "Generate", "PDF not found") },

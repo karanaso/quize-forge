@@ -9,17 +9,17 @@ export const runtime = "nodejs";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-async function loadQuiz(id: string) {
+async function loadQuiz(id: string, ownerId: string) {
   if (!isValidObjectId(id)) return null;
-  const doc = await Quiz.findById(id).lean();
+  const doc = await Quiz.findOne({ _id: id, ownerId }).lean();
   return doc;
 }
 
 export async function GET(_req: Request, ctx: Ctx) {
-  await requireTeacher();
+  const session = await requireTeacher();
   await dbConnect();
   const { id } = await ctx.params;
-  const doc = await loadQuiz(id);
+  const doc = await loadQuiz(id, session.userId!);
   if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ quiz: doc });
 }
@@ -32,10 +32,10 @@ const updateQuizSchema = z.object({
 });
 
 export async function PUT(request: Request, ctx: Ctx) {
-  await requireTeacher();
+  const session = await requireTeacher();
   await dbConnect();
   const { id } = await ctx.params;
-  const doc = await loadQuiz(id);
+  const doc = await loadQuiz(id, session.userId!);
   if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const body = updateQuizSchema.safeParse(await request.json());
@@ -50,10 +50,10 @@ export async function PUT(request: Request, ctx: Ctx) {
 }
 
 export async function DELETE(_req: Request, ctx: Ctx) {
-  await requireTeacher();
+  const session = await requireTeacher();
   await dbConnect();
   const { id } = await ctx.params;
-  const doc = await loadQuiz(id);
+  const doc = await loadQuiz(id, session.userId!);
   if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
   await Quiz.deleteOne({ _id: doc._id });
   return NextResponse.json({ ok: true });
