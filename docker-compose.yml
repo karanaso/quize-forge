@@ -1,0 +1,23 @@
+services:
+  mongodb:
+    image: mongo:8
+    restart: unless-stopped
+    volumes:
+      - mongodb-data:/data/db
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/quizforge
+      TEACHER_USERNAME: ${TEACHER_USERNAME:-teacher}
+      TEACHER_PASSWORD: ${TEACHER_PASSWORD:-change-me}
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-to-a-long-random-string}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb-data:
