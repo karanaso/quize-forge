@@ -3,8 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { CopiedDrawer } from "@/components/CopiedDrawer";
 import { QuizList } from "@/components/QuizList";
+import { I18nProvider } from "@/stores/locale";
 
 const URL = "http://localhost:3000/q/abc123";
+
+function renderWithProvider(ui: React.ReactElement) {
+  return render(<I18nProvider initialLocale="en">{ui}</I18nProvider>);
+}
 
 afterEach(() => {
   vi.useRealTimers();
@@ -12,7 +17,7 @@ afterEach(() => {
 
 describe("CopiedDrawer", () => {
   it("shows the confirmation and the copied url", () => {
-    render(<CopiedDrawer url={URL} onDismiss={() => {}} />);
+    renderWithProvider(<CopiedDrawer url={URL} onDismiss={() => {}} />);
 
     expect(screen.getByText("Copied link")).toBeInTheDocument();
     expect(screen.getByText(URL)).toBeInTheDocument();
@@ -24,7 +29,7 @@ describe("CopiedDrawer", () => {
     vi.useFakeTimers();
     const onDismiss = vi.fn();
 
-    render(<CopiedDrawer url={URL} onDismiss={onDismiss} />);
+    renderWithProvider(<CopiedDrawer url={URL} onDismiss={onDismiss} />);
     expect(onDismiss).not.toHaveBeenCalled();
 
     act(() => {
@@ -73,7 +78,7 @@ describe("QuizList copy link", () => {
 
   it("copies the link and shows the bottom drawer", async () => {
     writeText.mockResolvedValue(undefined);
-    render(<QuizList />);
+    renderWithProvider(<QuizList />);
 
     fireEvent.click(await screen.findByText("Copy link"));
 
@@ -84,7 +89,7 @@ describe("QuizList copy link", () => {
 
   it("shows no drawer when the clipboard write fails", async () => {
     writeText.mockRejectedValue(new Error("denied"));
-    render(<QuizList />);
+    renderWithProvider(<QuizList />);
 
     fireEvent.click(await screen.findByText("Copy link"));
 
@@ -98,7 +103,7 @@ describe("QuizList copy link", () => {
       value: undefined,
       configurable: true,
     });
-    render(<QuizList />);
+    renderWithProvider(<QuizList />);
 
     fireEvent.click(await screen.findByText("Copy link"));
 

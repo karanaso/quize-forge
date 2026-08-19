@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { StudentQuiz, type PublicQuiz } from "@/components/StudentQuiz";
 import { useStudentStore } from "@/stores/student";
+import { I18nProvider } from "@/stores/locale";
 
 const routerPush = vi.fn();
 
@@ -24,13 +25,21 @@ const quiz: PublicQuiz = {
   config: { timerMinutes: 10, shuffleQuestions: false, shuffleOptions: false },
 };
 
+function renderQuiz() {
+  return render(
+    <I18nProvider initialLocale="en">
+      <StudentQuiz quiz={quiz} />
+    </I18nProvider>,
+  );
+}
+
 describe("StudentQuiz header", () => {
   beforeEach(() => {
     useStudentStore.setState({ identity: { school: "S", className: "C", studentName: "N" } });
   });
 
   it("keeps the header sticky so it stays visible while scrolling", () => {
-    render(<StudentQuiz quiz={quiz} />);
+    renderQuiz();
 
     const heading = screen.getByRole("heading", { level: 1, name: /Test quiz/ });
     const header = heading.closest("div.sticky");
@@ -39,7 +48,7 @@ describe("StudentQuiz header", () => {
   });
 
   it("does not clip sticky positioning with an overflow-hidden ancestor", () => {
-    render(<StudentQuiz quiz={quiz} />);
+    renderQuiz();
 
     const backdrop = screen.getByTestId("happy-backdrop");
     expect(backdrop).not.toHaveClass("overflow-hidden");
